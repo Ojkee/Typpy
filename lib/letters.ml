@@ -8,7 +8,7 @@ type letter_status =
 
 type t = {
   c : char;
-  mutable status : letter_status;
+  status : letter_status;
 }
 
 type color = {
@@ -18,18 +18,18 @@ type color = {
 }
 
 type style = {
-  fg : color option;
-  bg : color option;
+  fg : color;
+  bg : color;
 }
 
 let bg_color : color = { r = 51; g = 51; b = 51 }
 let fg_color : color = { r = 255; g = 248; b = 231 }
 
 let status_style = function
-  | Current -> { fg = Some bg_color; bg = Some { r = 255; g = 248; b = 231 } }
-  | Pending -> { fg = Some { r = 255; g = 248; b = 231 }; bg = None }
-  | Correct -> { fg = Some { r = 128; g = 239; b = 128 }; bg = None }
-  | Mistake -> { fg = Some { r = 170; g = 0; b = 255 }; bg = None }
+  | Current -> { fg = bg_color; bg = { r = 255; g = 248; b = 231 } }
+  | Pending -> { fg = { r = 255; g = 248; b = 231 }; bg = bg_color }
+  | Correct -> { fg = { r = 128; g = 239; b = 128 }; bg = bg_color }
+  | Mistake -> { fg = { r = 170; g = 0; b = 255 }; bg = bg_color }
 
 let string_of_status = function
   | Current -> "Cur"
@@ -39,13 +39,13 @@ let string_of_status = function
 
 let style_of_letter ({ c = _; status } : t) : style = status_style status
 
-let take_n_as_letters words n =
+let init_n_as_letters (words : string array) (n : int) : t list =
   Lazy_table.random_n_words words n
   |> String.concat ~sep:" " |> String.to_list
   |> List.mapi ~f:(fun i c ->
          { c; status = (if i = 0 then Current else Pending) } )
 
-let next_space letters =
+let next_space (letters : t list) : int =
   let rec aux acc = function
     | { c = ' '; _ } :: _
     | [] ->
@@ -54,7 +54,7 @@ let next_space letters =
   in
   aux 1 letters
 
-let update_letters (letters : t list) (pressed : char) =
+let update_letters (letters : t list) (pressed : char) : t list =
   let get_status target got =
     if Char.compare target got = 0 then Correct else Mistake
   in
@@ -68,7 +68,7 @@ let update_letters (letters : t list) (pressed : char) =
   in
   aux [] false letters
 
-let delete_last_current letters =
+let delete_last_current (letters : t list) : t list =
   let rec aux acc last_curr = function
     | [] -> acc
     | { c; status = Current } :: tl ->
@@ -79,7 +79,7 @@ let delete_last_current letters =
   in
   aux [] false (List.rev letters)
 
-let print_letters letters =
+let print_letters (letters : t list) : unit =
   letters
   |> List.map ~f:(fun { c; status } ->
          Printf.sprintf "{%c %s}" c (string_of_status status) )
