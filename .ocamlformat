@@ -1,0 +1,6 @@
+profile = conventional
+type-decl = sparse
+break-cases = all
+indicate-multiline-delimiters = space
+
+

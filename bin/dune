@@ -1,0 +1,5 @@
+(executable
+ (public_name Typpy)
+ (name main)
+ (flags (:standard -w -26-32-37-69)) ; TODO: REMOVE
+ (libraries lib base stdio notty notty.unix))
