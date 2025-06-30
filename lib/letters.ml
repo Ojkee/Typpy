@@ -6,10 +6,12 @@ type letter_status =
   | Correct
   | Mistake
 
-type t = {
+type letter = {
   c : char;
   status : letter_status;
 }
+
+type t = letter list
 
 type color = {
   r : int;
@@ -24,6 +26,10 @@ type style = {
 
 let bg_color : color = { r = 51; g = 51; b = 51 }
 let fg_color : color = { r = 255; g = 248; b = 231 }
+let create () = []
+let rev (letters : t) : t = List.rev letters
+let of_list (x : letter list) : t = x
+let to_list (x : t) : letter list = x
 
 let status_style = function
   | Current -> { fg = bg_color; bg = { r = 255; g = 248; b = 231 } }
@@ -37,15 +43,15 @@ let string_of_status = function
   | Correct -> "Y"
   | Mistake -> "X"
 
-let style_of_letter ({ c = _; status } : t) : style = status_style status
+let style_of_letter ({ c = _; status } : letter) : style = status_style status
 
-let init_n_as_letters (words : string array) (n : int) : t list =
+let init_n_as_letters (words : string array) (n : int) : t =
   Lazy_table.random_n_words words n
   |> String.concat ~sep:" " |> String.to_list
   |> List.mapi ~f:(fun i c ->
          { c; status = (if i = 0 then Current else Pending) } )
 
-let next_space (letters : t list) : int =
+let next_space (letters : t) : int =
   let rec aux acc = function
     | { c = ' '; _ } :: _
     | [] ->
@@ -54,7 +60,19 @@ let next_space (letters : t list) : int =
   in
   aux 1 letters
 
-let update_letters (letters : t list) (pressed : char) : t list =
+let to_rows (letters : t) (max_width : int) : t list =
+  let rec aux current_row rows = function
+    | [] -> List.rev (current_row :: rows)
+    | lst ->
+        let next_space_n = next_space letters in
+        let word, rest = List.split_n lst next_space_n in
+        if next_space_n + List.length current_row <= max_width then
+          aux (current_row @ word) rows rest
+        else aux word (current_row :: rows) rest
+  in
+  aux [] [] letters
+
+let update_letters (letters : t) (pressed : char) : t =
   let get_status target got =
     if Char.compare target got = 0 then Correct else Mistake
   in
@@ -68,7 +86,7 @@ let update_letters (letters : t list) (pressed : char) : t list =
   in
   aux [] false letters
 
-let delete_last_current (letters : t list) : t list =
+let delete_last_current (letters : t) : t =
   let rec aux acc last_curr = function
     | [] -> acc
     | { c; status = Current } :: tl ->
@@ -79,7 +97,13 @@ let delete_last_current (letters : t list) : t list =
   in
   aux [] false (List.rev letters)
 
-let print_letters (letters : t list) : unit =
+let rec finished (letters : t) : bool =
+  match letters with
+  | [] -> true
+  | { c = _; status = Current } :: _ -> false
+  | _ :: tl -> finished tl
+
+let print_letters (letters : t) : unit =
   letters
   |> List.map ~f:(fun { c; status } ->
          Printf.sprintf "{%c %s}" c (string_of_status status) )

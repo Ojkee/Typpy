@@ -1,4 +1,3 @@
-open Base
 open Notty_unix
 open Lib
 
@@ -14,7 +13,7 @@ let () =
 
   let rec loop letters () =
     let frame =
-      Render.make_frame letters ~max_width:max_text_width ~cols ~rows
+      Render.typing_frame letters ~max_width:max_text_width ~cols ~rows
     in
     Term.image term frame;
     match Term.event term with
