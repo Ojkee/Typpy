@@ -8,6 +8,14 @@ type mistake = {
 type t
 
 val create : unit -> t
+
+val make_mistake :
+  inserted:char ->
+  target:char ->
+  prefix:char option ->
+  suffix:char option ->
+  mistake
+
 val prefix_ngram : mistake -> string option
 val suffix_ngram : mistake -> string option
 val add_mistake : t -> mistake -> t

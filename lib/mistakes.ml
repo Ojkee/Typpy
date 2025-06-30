@@ -12,6 +12,10 @@ type t = mistake list
 let string_of_char (c : char) : string = String.make 1 c
 let create () : t = []
 
+let make_mistake ~(inserted : char) ~(target : char) ~(prefix : char option)
+    ~(suffix : char option) : mistake =
+  { inserted; target; prefix; suffix }
+
 let prefix_ngram = function
   | { inserted = _; target = t; prefix = Some p; _ } ->
       Some (string_of_char p ^ string_of_char t)

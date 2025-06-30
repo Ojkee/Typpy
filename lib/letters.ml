@@ -5,6 +5,7 @@ type letter_status =
   | Pending
   | Correct
   | Mistake
+  | Text
 
 type letter = {
   c : char;
@@ -31,9 +32,14 @@ let rev (letters : t) : t = List.rev letters
 let of_list (x : letter list) : t = x
 let to_list (x : t) : letter list = x
 
+let of_string text =
+  text |> String.to_list |> List.map ~f:(fun c -> { c; status = Text })
+
 let status_style = function
   | Current -> { fg = bg_color; bg = { r = 255; g = 248; b = 231 } }
-  | Pending -> { fg = { r = 255; g = 248; b = 231 }; bg = bg_color }
+  | Pending
+  | Text ->
+      { fg = { r = 255; g = 248; b = 231 }; bg = bg_color }
   | Correct -> { fg = { r = 128; g = 239; b = 128 }; bg = bg_color }
   | Mistake -> { fg = { r = 170; g = 0; b = 255 }; bg = bg_color }
 
@@ -42,6 +48,7 @@ let string_of_status = function
   | Pending -> "Pen"
   | Correct -> "Y"
   | Mistake -> "X"
+  | Text -> "Txt"
 
 let style_of_letter ({ c = _; status } : letter) : style = status_style status
 
@@ -64,7 +71,7 @@ let to_rows (letters : t) (max_width : int) : t list =
   let rec aux current_row rows = function
     | [] -> List.rev (current_row :: rows)
     | lst ->
-        let next_space_n = next_space letters in
+        let next_space_n = next_space lst in
         let word, rest = List.split_n lst next_space_n in
         if next_space_n + List.length current_row <= max_width then
           aux (current_row @ word) rows rest
@@ -89,6 +96,7 @@ let update_letters (letters : t) (pressed : char) : t =
 let delete_last_current (letters : t) : t =
   let rec aux acc last_curr = function
     | [] -> acc
+    | [ ({ c = _; status = Current } as current) ] -> current :: acc
     | { c; status = Current } :: tl ->
         aux ({ c; status = Pending } :: acc) true tl
     | { c; _ } :: tl when last_curr ->

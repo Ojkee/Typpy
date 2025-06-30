@@ -5,6 +5,7 @@ type letter_status =
   | Pending
   | Correct
   | Mistake
+  | Text
 
 type letter = {
   c : char;
@@ -30,6 +31,7 @@ val create : unit -> t
 val rev : t -> t
 val of_list : letter list -> t
 val to_list : t -> letter list
+val of_string : string -> t
 val status_style : letter_status -> style
 val style_of_letter : letter -> style
 val init_n_as_letters : string array -> int -> t

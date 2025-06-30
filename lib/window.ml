@@ -1,5 +1,57 @@
-type mode =
-  | Typing of Letters.t list * Mistakes.t
-  | Summary of Mistakes.t
+type typing = {
+  letters : Letters.t;
+  mistakes : Mistakes.t;
+}
 
-type state = { mode : mode }
+type summary = { mistakes : Mistakes.t }
+
+type t =
+  | Typing of typing
+  | Summary of summary
+
+let create_typing ~words ~n : t =
+  let letters = Letters.init_n_as_letters words n in
+  let mistakes = Mistakes.create () in
+
+  Typing { letters; mistakes }
+
+let mistake_if_happened (letters : Letters.t) (mistakes : Mistakes.t)
+    (input : char) : Mistakes.t =
+  let make ?prefix ?suffix target =
+    Mistakes.make_mistake ~inserted:input ~target ~prefix ~suffix
+    |> Mistakes.add_mistake mistakes
+  in
+  let rec aux (lst : Letters.letter list) =
+    match lst with
+    | [] -> mistakes
+    | { c = _; status = Current } :: _ -> mistakes
+    | { c = target; status = Mistake } :: { c = after; status = Current } :: _
+      ->
+        make ~suffix:after target
+    | { c = before; _ }
+      :: { c = target; status = Mistake }
+      :: { c = after; status = Current }
+      :: _ ->
+        make ~prefix:before ~suffix:after target
+    | [ { c = before; _ }; { c = target; status = Mistake } ] ->
+        make ~prefix:before target
+    | [ { c = target; status = Mistake } ] -> make target
+    | _ :: tl -> aux tl
+  in
+  aux (Letters.to_list letters)
+
+let input_update (state : t) (input : char) : t =
+  match state with
+  | Typing { letters; mistakes } ->
+      let letters = Letters.update_letters letters input in
+      let mistakes = mistake_if_happened letters mistakes input in
+      if Letters.finished letters then Summary { mistakes }
+      else Typing { letters; mistakes }
+  | Summary _ -> failwith "unimplemented"
+
+let backspace_update (state : t) : t =
+  match state with
+  | Typing { letters; mistakes } ->
+      let letters = Letters.delete_last_current letters in
+      Typing { letters; mistakes }
+  | Summary _ as s -> s

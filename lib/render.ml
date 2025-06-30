@@ -24,9 +24,16 @@ let make_centered_image image width height =
   let dy = max 0 ((height - h) / 2) in
   I.pad ~l:dx ~t:dy image
 
-let typing_frame letters ~max_width ~cols ~rows =
+let frame window ~max_width ~cols ~rows =
   let backgound_color_attr = A.(bg (rgb_888 ~r:51 ~g:51 ~b:51)) in
-  let image = letters |> letters_to_image ~max_width in
   let backgound = I.char backgound_color_attr ' ' cols rows in
-  let centered = make_centered_image image cols rows in
-  I.(centered </> backgound)
+  match window with
+  | Window.Typing { letters; _ } ->
+      let image = letters |> letters_to_image ~max_width in
+      let centered = make_centered_image image cols rows in
+      I.(centered </> backgound)
+  | Window.Summary { mistakes = _ } ->
+      let summary_letters = Letters.of_string "Summary" in
+      let image = summary_letters |> letters_to_image ~max_width in
+      let centered = make_centered_image image cols rows in
+      I.(centered </> backgound)
