@@ -8,17 +8,18 @@ let () =
   let term = Term.create () in
   let cols, rows = Term.size term in
   let max_width = 4 * cols / 5 in
+  let n = 3 in
 
-  let rec loop state () =
+  let rec loop state =
     let frame = Render.frame state ~max_width ~rows ~cols in
     Term.image term frame;
     match Term.event term with
     | `Key (`Escape, _) -> ()
-    | `Key (`ASCII p, _) -> loop (Window.input_update state p) ()
-    | `Key (`Backspace, _) -> loop (Window.backspace_update state) ()
-    | _ -> loop state ()
+    | `Key (`ASCII p, _) -> loop (Window.input_update state p words n)
+    | `Key (`Backspace, _) -> loop (Window.backspace_update state)
+    | _ -> loop state
   in
 
-  let window_state = Window.create_typing ~words ~n:20 in
-  loop window_state ();
+  let window_state = Window.create_typing ~words ~n in
+  loop window_state;
   Term.release term

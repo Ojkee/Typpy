@@ -10,5 +10,5 @@ type t =
   | Summary of summary
 
 val create_typing : words:string array -> n:int -> t
-val input_update : t -> char -> t
+val input_update : t -> char -> string array -> int -> t
 val backspace_update : t -> t

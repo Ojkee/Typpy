@@ -46,8 +46,5 @@ let common_counter (mistakes : t) : ((char * char) * int) list =
 
 let common_counter_top_n (mistakes : t) (n : int) : ((char * char) * int) list =
   common_counter mistakes
-  |> List.sort ~compare:(fun (_, c1) (_, c2) -> Int.compare c1 c2)
+  |> List.sort ~compare:(fun (_, c1) (_, c2) -> Int.compare c2 c1)
   |> fun x -> List.take x n
-
-(* val n_common_prefix : t -> int -> t *)
-(* val n_common_suffix : t -> int -> t *)

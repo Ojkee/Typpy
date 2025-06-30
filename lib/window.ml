@@ -40,14 +40,15 @@ let mistake_if_happened (letters : Letters.t) (mistakes : Mistakes.t)
   in
   aux (Letters.to_list letters)
 
-let input_update (state : t) (input : char) : t =
+let input_update (state : t) (input : char) (words : string array) (n : int) : t
+    =
   match state with
   | Typing { letters; mistakes } ->
       let letters = Letters.update_letters letters input in
       let mistakes = mistake_if_happened letters mistakes input in
       if Letters.finished letters then Summary { mistakes }
       else Typing { letters; mistakes }
-  | Summary _ -> failwith "unimplemented"
+  | Summary _ as s -> if input = 'r' then create_typing ~words ~n else s
 
 let backspace_update (state : t) : t =
   match state with
