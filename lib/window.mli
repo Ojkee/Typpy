@@ -1,9 +1,14 @@
 type typing = {
   letters : Letters.t;
   mistakes : Mistakes.t;
+  start_time : float option;
 }
 
-type summary = { mistakes : Mistakes.t }
+type summary = {
+  mistakes : Mistakes.t;
+  num_letters : int;
+  execution_time : float;
+}
 
 type t =
   | Typing of typing

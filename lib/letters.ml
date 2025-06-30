@@ -29,6 +29,7 @@ let bg_color : color = { r = 51; g = 51; b = 51 }
 let fg_color : color = { r = 255; g = 248; b = 231 }
 let create () = []
 let rev (letters : t) : t = List.rev letters
+let lenght (letters : t) : int = List.length letters
 let of_list (x : letter list) : t = x
 let to_list (x : t) : letter list = x
 

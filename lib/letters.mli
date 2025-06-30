@@ -29,6 +29,7 @@ val bg_color : color
 val fg_color : color
 val create : unit -> t
 val rev : t -> t
+val lenght : t -> int
 val of_list : letter list -> t
 val to_list : t -> letter list
 val of_string : string -> t

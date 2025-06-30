@@ -45,20 +45,36 @@ let to_string_list ((i, t), count) =
 
 let render_mistakes_table mistakes =
   let header = [ "Typed"; "Expected"; "Count" ] in
-  let widths = List.map ~f:String.length header in
+  let widths = List.map ~f:(fun word -> String.length word + 10) header in
   let mistakes_str =
-    List.map mistakes ~f:to_string_list
+    mistakes |> List.map ~f:to_string_list
     |> List.map ~f:(fun row -> render_row row widths)
   in
-  render_row header widths :: render_separator widths :: mistakes_str
+  render_separator widths :: render_row header widths :: render_separator widths
+  :: mistakes_str
+  @ [ render_separator widths ]
 
 let info_table infos len = List.map infos ~f:(fun info -> pad info len)
 
-let render_mistakes_image mistakes =
+let make_time_info execution_time num_letters len =
+  let wpm =
+    if Float.compare execution_time 0. <> 0 then
+      Printf.sprintf "wpm: %.2f"
+        (Int.to_float num_letters /. 5. *. (60. /. execution_time))
+    else "0.00"
+  in
+  let time = Printf.sprintf "time: %.2fs" execution_time in
+  " " ^ wpm
+  ^ String.make (len - String.length wpm - String.length time - 2) ' '
+  ^ time ^ " "
+
+let render_summary_image { Window.mistakes; num_letters; execution_time } =
+  let mistakes = Mistakes.common_counter_top_n mistakes 5 in
   let table = render_mistakes_table mistakes in
   let len = table |> List.hd |> Option.value ~default:"" |> String.length in
+  let time_info = [ make_time_info execution_time num_letters len ] in
   let info = info_table [ "'r' to restart"; "'esc' to exit" ] len in
-  List.map (table @ info) ~f:Letters.of_string |> letter_rows_to_img
+  List.map (time_info @ table @ info) ~f:Letters.of_string |> letter_rows_to_img
 
 let frame window ~max_width ~cols ~rows =
   let backgound_color_attr = A.(bg (rgb_888 ~r:51 ~g:51 ~b:51)) in
@@ -68,8 +84,7 @@ let frame window ~max_width ~cols ~rows =
       let image = letters |> letters_to_image ~max_width in
       let centered = make_centered_image image cols rows in
       I.(centered </> backgound)
-  | Window.Summary { mistakes } ->
-      let top_mistakes = Mistakes.common_counter_top_n mistakes 5 in
-      let mistakes_image = render_mistakes_image top_mistakes in
+  | Window.Summary summary ->
+      let mistakes_image = render_summary_image summary in
       let centered = make_centered_image mistakes_image cols rows in
       I.(centered </> backgound)
