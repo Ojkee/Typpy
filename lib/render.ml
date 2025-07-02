@@ -64,9 +64,16 @@ let make_time_info execution_time num_letters len =
     else "0.00"
   in
   let time = Printf.sprintf "time: %.2fs" execution_time in
-  " " ^ wpm
-  ^ String.make (len - String.length wpm - String.length time - 2) ' '
-  ^ time ^ " "
+  let pad_len = 1 in
+  let gap_len = len - String.length wpm - String.length time - (2 * pad_len) in
+  [
+    String.make pad_len ' ';
+    wpm;
+    String.make gap_len ' ';
+    time;
+    String.make pad_len ' ';
+  ]
+  |> String.concat ~sep:""
 
 let render_summary_image { Window.mistakes; num_letters; execution_time } =
   let mistakes = Mistakes.common_counter_top_n mistakes 5 in
@@ -76,15 +83,25 @@ let render_summary_image { Window.mistakes; num_letters; execution_time } =
   let info = info_table [ "'r' to restart"; "'esc' to exit" ] len in
   List.map (time_info @ table @ info) ~f:Letters.of_string |> letter_rows_to_img
 
+let render_menu { Window.configs } ~max_width =
+  let cfg_to_letters { Window.name; value; selected } =
+    let value_string = Window.config_value_to_string value in
+    let gap_len = max_width - String.length name - String.length value_string in
+    let gap = String.make gap_len ' ' in
+    [ name; value_string ] |> String.concat ~sep:gap
+    |> Letters.of_string ~status:(if selected then SelectedText else Text)
+  in
+  List.map configs ~f:cfg_to_letters |> letter_rows_to_img
+
 let frame window ~max_width ~cols ~rows =
   let backgound_color_attr = A.(bg (rgb_888 ~r:51 ~g:51 ~b:51)) in
   let backgound = I.char backgound_color_attr ' ' cols rows in
+  let draw_centered img =
+    let centered = make_centered_image img cols rows in
+    I.(centered </> backgound)
+  in
   match window with
+  | Window.Menu menu -> render_menu menu ~max_width |> draw_centered
   | Window.Typing { letters; _ } ->
-      let image = letters |> letters_to_image ~max_width in
-      let centered = make_centered_image image cols rows in
-      I.(centered </> backgound)
-  | Window.Summary summary ->
-      let mistakes_image = render_summary_image summary in
-      let centered = make_centered_image mistakes_image cols rows in
-      I.(centered </> backgound)
+      letters |> letters_to_image ~max_width |> draw_centered
+  | Window.Summary summary -> render_summary_image summary |> draw_centered

@@ -4,7 +4,6 @@ open Lib
 let () =
   let content = File_utils.file_content "data/words_alpha.txt" in
   let words = File_utils.content_words content 8 15 in
-  let table = Lazy_table.create () in
   let term = Term.create () in
   let cols, rows = Term.size term in
   let max_width = 4 * cols / 5 in
@@ -15,11 +14,13 @@ let () =
     Term.image term frame;
     match Term.event term with
     | `Key (`Escape, _) -> ()
-    | `Key (`ASCII p, _) -> loop (Window.input_update state p words n)
-    | `Key (`Backspace, _) -> loop (Window.backspace_update state)
+    | `Key (`Tab, _) -> loop (Window.handle_tab state)
+    | `Key (`Enter, _) -> loop (Window.handle_enter state)
+    | `Key (`ASCII p, _) -> loop (Window.handle_input_char state p words n)
+    | `Key (`Backspace, _) -> loop (Window.handle_backspace state)
     | _ -> loop state
   in
 
-  let window_state = Window.create_typing ~words ~n in
+  let window_state = Window.create_menu () in
   loop window_state;
   Term.release term

@@ -6,6 +6,7 @@ type letter_status =
   | Correct
   | Mistake
   | Text
+  | SelectedText
 
 type letter = {
   c : char;
@@ -33,8 +34,8 @@ let lenght (letters : t) : int = List.length letters
 let of_list (x : letter list) : t = x
 let to_list (x : t) : letter list = x
 
-let of_string text =
-  text |> String.to_list |> List.map ~f:(fun c -> { c; status = Text })
+let of_string ?(status = Text) text =
+  text |> String.to_list |> List.map ~f:(fun c -> { c; status })
 
 let status_style = function
   | Current -> { fg = bg_color; bg = { r = 255; g = 248; b = 231 } }
@@ -43,6 +44,7 @@ let status_style = function
       { fg = { r = 255; g = 248; b = 231 }; bg = bg_color }
   | Correct -> { fg = { r = 128; g = 239; b = 128 }; bg = bg_color }
   | Mistake -> { fg = { r = 170; g = 0; b = 255 }; bg = bg_color }
+  | SelectedText -> { fg = { r = 153; g = 150; b = 141 }; bg = bg_color }
 
 let string_of_status = function
   | Current -> "Cur"
@@ -50,6 +52,7 @@ let string_of_status = function
   | Correct -> "Y"
   | Mistake -> "X"
   | Text -> "Txt"
+  | SelectedText -> "Sxt"
 
 let style_of_letter ({ c = _; status } : letter) : style = status_style status
 

@@ -6,6 +6,7 @@ type letter_status =
   | Correct
   | Mistake
   | Text
+  | SelectedText
 
 type letter = {
   c : char;
@@ -32,7 +33,7 @@ val rev : t -> t
 val lenght : t -> int
 val of_list : letter list -> t
 val to_list : t -> letter list
-val of_string : string -> t
+val of_string : ?status:letter_status -> string -> t
 val status_style : letter_status -> style
 val style_of_letter : letter -> style
 val init_n_as_letters : string array -> int -> t
