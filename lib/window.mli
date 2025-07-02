@@ -6,13 +6,18 @@ type config_value =
   | Int of int_type
   | Bool of bool
 
+type config_type =
+  | WordsNumber
+  | Punctuation
+  | Uppercase
+
 type config = {
-  name : string;
+  ctype : config_type;
   value : config_value;
   selected : bool;
 }
 
-type menu = { configs : config list }
+type configs = config list
 
 type typing = {
   letters : Letters.t;
@@ -26,15 +31,24 @@ type summary = {
   execution_time : float;
 }
 
-type t =
-  | Menu of menu
+type state =
+  | Menu
   | Typing of typing
   | Summary of summary
 
+type lexicon
+
+type t = {
+  current_state : state;
+  lexicon : lexicon;
+  configs : configs;
+}
+
+val config_type_to_string : config_type -> string
 val config_value_to_string : config_value -> string
-val create_menu : unit -> t
-val create_typing : words:string array -> n:int -> t
-val handle_input_char : t -> char -> string array -> int -> t
+val create_typing : t -> state
+val create : unit -> t
+val handle_input_char : t -> char -> t
 val handle_backspace : t -> t
 val handle_tab : t -> t
 val handle_enter : t -> t

@@ -8,13 +8,18 @@ type config_value =
   | Int of int_type
   | Bool of bool
 
+type config_type =
+  | WordsNumber
+  | Punctuation
+  | Uppercase
+
 type config = {
-  name : string;
+  ctype : config_type;
   value : config_value;
   selected : bool;
 }
 
-type menu = { configs : config list }
+type configs = config list
 
 type typing = {
   letters : Letters.t;
@@ -28,35 +33,68 @@ type summary = {
   execution_time : float;
 }
 
-type t =
-  | Menu of menu
+type state =
+  | Menu
   | Typing of typing
   | Summary of summary
 
-let create_menu () =
-  Menu
-    {
-      configs =
-        [
-          {
-            name = "number of words";
-            value = Int (Finite "5");
-            selected = true;
-          };
-          { name = "punctuation"; value = Bool false; selected = false };
-          { name = "uppercase"; value = Bool false; selected = false };
-        ];
-    }
+type lexicon = { words : Words.t (* memo : Lazy_table.t; *) }
+
+type t = {
+  current_state : state;
+  lexicon : lexicon;
+  configs : configs;
+}
+
+let config_type_to_string = function
+  | WordsNumber -> "number of words"
+  | Punctuation -> "punctuation"
+  | Uppercase -> "uppercase"
 
 let config_value_to_string = function
   | Int (Finite x) -> x
   | Int Infinite -> "inf"
   | Bool x -> Bool.to_string x
 
-let create_typing ~words ~n =
+let create_default_configs () =
+  [
+    { ctype = WordsNumber; value = Int (Finite "5"); selected = true };
+    { ctype = Punctuation; value = Bool false; selected = false };
+    { ctype = Uppercase; value = Bool false; selected = false };
+  ]
+
+let same_ctype ctype cfg_type =
+  match (ctype, cfg_type) with
+  | WordsNumber, WordsNumber -> true
+  | Punctuation, Punctuation -> true
+  | Uppercase, Uppercase -> true
+  | _, _ -> false
+
+let find_config cfg_type configs =
+  List.find configs ~f:(fun cfg -> same_ctype cfg.ctype cfg_type)
+  |> Option.value_exn ~message:"Config not found"
+  |> fun { value; _ } ->
+  match value with
+  | Int x -> x
+  | _ -> assert false
+
+let create_typing { configs; lexicon = { words; _ }; _ } =
+  let num_words = find_config WordsNumber configs in
+  let n =
+    match num_words with
+    | Finite x -> Int.of_string x
+    | Infinite -> 100
+  in
   let letters = Letters.init_n_as_letters words n in
   let mistakes = Mistakes.create () in
   Typing { letters; mistakes; start_time = None }
+
+let create () =
+  let words = Words.create ~file_name:"data/words_alpha.txt" ~min:8 ~max:15 in
+  (* let memo = Lazy_table.create () in *)
+  let current_state = Menu in
+  let configs = create_default_configs () in
+  { current_state; lexicon = { words (* ; memo *) }; configs }
 
 let mistake_if_happened letters mistakes input =
   let make ?prefix ?suffix target =
@@ -94,34 +132,42 @@ let insert_value cfg c =
       if Int.of_string new_int > 1000 then
         { cfg' with value = Int (Finite "1000") }
       else { cfg' with value = Int (Finite new_int) }
+  | { value = Int Infinite; _ } as cfg' when Char.( = ) c '0' -> cfg'
   | { value = Int Infinite; _ } as cfg' when is_num c ->
       let value = Int (Finite (String.make 1 c)) in
       { cfg' with value }
   | { value = Int _; _ } as cfg' -> cfg'
   | { value = Bool _; _ } as cfg' -> cfg'
 
-let handle_menu_input_char { configs } c =
+let handle_menu_input_char { configs; _ } c =
   List.map configs ~f:(fun cfg -> insert_value cfg c)
 
-let handle_input_char state input words n =
-  match state with
-  | Menu menu -> Menu { configs = handle_menu_input_char menu input }
+let handle_input_char window input : t =
+  let update_state state = { window with current_state = state } in
+  match window.current_state with
+  | Menu -> { window with configs = handle_menu_input_char window input }
   | Typing { letters; mistakes; start_time; _ } -> (
       let letters = Letters.update_letters letters input in
       let mistakes = mistake_if_happened letters mistakes input in
       match (Letters.finished letters, start_time) with
       | false, None ->
-          Typing { letters; mistakes; start_time = Some (Unix.gettimeofday ()) }
-      | false, _ -> Typing { letters; mistakes; start_time }
+          update_state
+            (Typing
+               { letters; mistakes; start_time = Some (Unix.gettimeofday ()) }
+            )
+      | false, _ -> update_state (Typing { letters; mistakes; start_time })
       | true, Some start ->
           let num_letters = Letters.lenght letters in
           let execution_time = Unix.gettimeofday () -. start in
-          Summary { mistakes; num_letters; execution_time }
+          update_state (Summary { mistakes; num_letters; execution_time })
       | true, None ->
           let num_letters = Letters.lenght letters in
-          Summary { mistakes; num_letters; execution_time = 0. } )
-  | Summary _ as s ->
-      if Char.compare input 'r' = 0 then create_typing ~words ~n else s
+          update_state (Summary { mistakes; num_letters; execution_time = 0. })
+      )
+  | Summary _ ->
+      if Char.( = ) input 'r' then
+        { window with current_state = create_typing window }
+      else window
 
 let delete_value = function
   | { selected = false; _ } as cfg' -> cfg'
@@ -132,17 +178,17 @@ let delete_value = function
   | { value = Int Infinite; _ } as cfg' -> cfg'
   | { value = Bool _; _ } as cfg' -> cfg'
 
-let handle_backspace_menu { configs } = List.map configs ~f:delete_value
+let handle_backspace_menu configs = List.map configs ~f:delete_value
 
-let handle_backspace state =
-  match state with
-  | Menu menu -> Menu { configs = handle_backspace_menu menu }
+let handle_backspace window =
+  match window.current_state with
+  | Menu -> { window with configs = handle_backspace_menu window.configs }
   | Typing { letters; mistakes; start_time } ->
       let letters = Letters.delete_last_current letters in
-      Typing { letters; mistakes; start_time }
-  | Summary _ as s -> s
+      { window with current_state = Typing { letters; mistakes; start_time } }
+  | Summary _ -> window
 
-let select_next_config { configs } =
+let select_next_config configs =
   let selections (c : config) = c.selected in
   let shift lst =
     match List.rev lst with
@@ -153,14 +199,14 @@ let select_next_config { configs } =
   |> shift
   |> List.map2_exn ~f:(fun cfg sel -> { cfg with selected = sel }) configs
 
-let handle_tab state =
-  match state with
-  | Menu menu -> Menu { configs = select_next_config menu }
-  | Typing _ as s -> s
-  | Summary _ as s -> s
+let handle_tab window =
+  match window.current_state with
+  | Menu -> { window with configs = select_next_config window.configs }
+  | Typing _ -> window
+  | Summary _ -> window
 
-let handle_enter state =
-  match state with
-  | Menu _ as s -> s
-  | Typing _ as s -> s
-  | Summary _ as s -> s
+let handle_enter window =
+  match window.current_state with
+  | Menu -> window
+  | Typing _ -> window
+  | Summary _ -> window

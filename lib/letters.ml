@@ -56,7 +56,7 @@ let string_of_status = function
 
 let style_of_letter ({ c = _; status } : letter) : style = status_style status
 
-let init_n_as_letters (words : string array) (n : int) : t =
+let init_n_as_letters (words : Words.t) (n : int) : t =
   Lazy_table.random_n_words words n
   |> String.concat ~sep:" " |> String.to_list
   |> List.mapi ~f:(fun i c ->

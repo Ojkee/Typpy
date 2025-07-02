@@ -10,8 +10,7 @@ let contains (word : string) (ngram : string) : bool =
   with
   | Not_found -> false
 
-let add_words_with_ngram (table : t) (words : string array) (ngram : string) :
-    unit =
+let add_words_with_ngram (table : t) (words : Words.t) (ngram : string) : unit =
   match Hashtbl.find_opt table ngram with
   | None ->
       let rec aux acc = function
@@ -19,7 +18,7 @@ let add_words_with_ngram (table : t) (words : string array) (ngram : string) :
         | hd :: tl when contains hd ngram -> aux (hd :: acc) tl
         | _ :: tl -> aux acc tl
       in
-      Hashtbl.add table ngram (aux [] (Array.to_list words))
+      Hashtbl.add table ngram (aux [] (Words.to_list words))
   | Some _ -> ()
 
 let from_ngram (table : t) (ngram : string) : string list option =
@@ -33,7 +32,7 @@ let take_random_n (n : int) (maxn : int) : int list =
   in
   aux [] n
 
-let rec random_n_from_ngram (table : t) (words : string array) (ngram : string)
+let rec random_n_from_ngram (table : t) (words : Words.t) (ngram : string)
     (n : int) : string list =
   match from_ngram table ngram with
   | None ->
@@ -45,10 +44,10 @@ let rec random_n_from_ngram (table : t) (words : string array) (ngram : string)
       let find_idx i _ = List.mem i rand_n in
       lst |> List.filteri find_idx
 
-let random_n_words (words : string array) (n : int) : string list =
-  let rand_n = take_random_n n (Array.length words) in
+let random_n_words (words : Words.t) (n : int) : string list =
+  let rand_n = take_random_n n (Words.length words) in
   let rec aux acc = function
     | [] -> acc
-    | hd :: tl -> aux (Array.get words hd :: acc) tl
+    | hd :: tl -> aux (Words.get words hd :: acc) tl
   in
   aux [] rand_n

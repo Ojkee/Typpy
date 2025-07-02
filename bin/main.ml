@@ -2,8 +2,6 @@ open Notty_unix
 open Lib
 
 let () =
-  let content = File_utils.file_content "data/words_alpha.txt" in
-  let words = File_utils.content_words content 8 15 in
   let term = Term.create () in
   let cols, rows = Term.size term in
   let max_width = 4 * cols / 5 in
@@ -16,11 +14,12 @@ let () =
     | `Key (`Escape, _) -> ()
     | `Key (`Tab, _) -> loop (Window.handle_tab state)
     | `Key (`Enter, _) -> loop (Window.handle_enter state)
-    | `Key (`ASCII p, _) -> loop (Window.handle_input_char state p words n)
+    | `Key (`ASCII c, _) -> loop (Window.handle_input_char state c)
     | `Key (`Backspace, _) -> loop (Window.handle_backspace state)
     | _ -> loop state
   in
 
-  let window_state = Window.create_menu () in
+  (* let window_state = Window.create_menu () in *)
+  let window_state = Window.create () in
   loop window_state;
   Term.release term

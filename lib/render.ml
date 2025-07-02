@@ -83,8 +83,9 @@ let render_summary_image { Window.mistakes; num_letters; execution_time } =
   let info = info_table [ "'r' to restart"; "'esc' to exit" ] len in
   List.map (time_info @ table @ info) ~f:Letters.of_string |> letter_rows_to_img
 
-let render_menu { Window.configs } ~max_width =
-  let cfg_to_letters { Window.name; value; selected } =
+let render_menu configs ~max_width =
+  let cfg_to_letters { Window.ctype; value; selected } =
+    let name = Window.config_type_to_string ctype in
     let value_string = Window.config_value_to_string value in
     let gap_len = max_width - String.length name - String.length value_string in
     let gap = String.make gap_len ' ' in
@@ -100,8 +101,8 @@ let frame window ~max_width ~cols ~rows =
     let centered = make_centered_image img cols rows in
     I.(centered </> backgound)
   in
-  match window with
-  | Window.Menu menu -> render_menu menu ~max_width |> draw_centered
+  match window.Window.current_state with
+  | Window.Menu -> render_menu window.configs ~max_width |> draw_centered
   | Window.Typing { letters; _ } ->
       letters |> letters_to_image ~max_width |> draw_centered
   | Window.Summary summary -> render_summary_image summary |> draw_centered
