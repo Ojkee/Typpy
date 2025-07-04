@@ -23,6 +23,7 @@ type configs = config list
 
 type typing = {
   letters : Letters.t;
+  current_row : int;
   mistakes : Mistakes.t;
   start_time : float option;
 }
@@ -78,7 +79,7 @@ let find_config cfg_type configs =
   | Int x -> x
   | _ -> assert false
 
-let create_typing { configs; lexicon = { words; _ }; _ } =
+let create_typing { lexicon = { words; _ }; configs; _ } =
   let num_words = find_config WordsNumber configs in
   let n =
     match num_words with
@@ -87,7 +88,7 @@ let create_typing { configs; lexicon = { words; _ }; _ } =
   in
   let letters = Letters.init_n_as_letters words n in
   let mistakes = Mistakes.create () in
-  Typing { letters; mistakes; start_time = None }
+  Typing { letters; current_row = 0; mistakes; start_time = None }
 
 let create () =
   let words = Words.create ~file_name:"data/words_alpha.txt" ~min:8 ~max:15 in
@@ -125,6 +126,10 @@ let insert_value cfg c =
     | '0' .. '9' -> true
     | _ -> false
   in
+  let is_space = function
+    | ' ' -> true
+    | _ -> false
+  in
   match cfg with
   | { selected = false; _ } as cfg' -> cfg'
   | { value = Int (Finite x); _ } as cfg' when is_num c ->
@@ -137,6 +142,8 @@ let insert_value cfg c =
       let value = Int (Finite (String.make 1 c)) in
       { cfg' with value }
   | { value = Int _; _ } as cfg' -> cfg'
+  | { value = Bool b; _ } as cfg' when is_space c ->
+      { cfg' with value = Bool (not b) }
   | { value = Bool _; _ } as cfg' -> cfg'
 
 let handle_menu_input_char { configs; _ } c =
@@ -146,16 +153,20 @@ let handle_input_char window input : t =
   let update_state state = { window with current_state = state } in
   match window.current_state with
   | Menu -> { window with configs = handle_menu_input_char window input }
-  | Typing { letters; mistakes; start_time; _ } -> (
-      let letters = Letters.update_letters letters input in
+  | Typing ({ letters; mistakes; start_time; _ } as typing) -> (
+      let letters = Letters.update letters input in
       let mistakes = mistake_if_happened letters mistakes input in
       match (Letters.finished letters, start_time) with
       | false, None ->
           update_state
             (Typing
-               { letters; mistakes; start_time = Some (Unix.gettimeofday ()) }
-            )
-      | false, _ -> update_state (Typing { letters; mistakes; start_time })
+               {
+                 typing with
+                 letters;
+                 mistakes;
+                 start_time = Some (Unix.gettimeofday ());
+               } )
+      | false, _ -> update_state (Typing { typing with letters; mistakes })
       | true, Some start ->
           let num_letters = Letters.lenght letters in
           let execution_time = Unix.gettimeofday () -. start in
@@ -183,9 +194,9 @@ let handle_backspace_menu configs = List.map configs ~f:delete_value
 let handle_backspace window =
   match window.current_state with
   | Menu -> { window with configs = handle_backspace_menu window.configs }
-  | Typing { letters; mistakes; start_time } ->
+  | Typing ({ letters; _ } as typing) ->
       let letters = Letters.delete_last_current letters in
-      { window with current_state = Typing { letters; mistakes; start_time } }
+      { window with current_state = Typing { typing with letters } }
   | Summary _ -> window
 
 let select_next_config configs =
@@ -207,6 +218,6 @@ let handle_tab window =
 
 let handle_enter window =
   match window.current_state with
-  | Menu -> window
+  | Menu -> { window with current_state = create_typing window }
   | Typing _ -> window
   | Summary _ -> window

@@ -21,6 +21,7 @@ type configs = config list
 
 type typing = {
   letters : Letters.t;
+  current_row : int;
   mistakes : Mistakes.t;
   start_time : float option;
 }

@@ -7,6 +7,7 @@ type letter_status =
   | Mistake
   | Text
   | SelectedText
+  | SummaryTable
 
 type letter = {
   c : char;
@@ -40,19 +41,12 @@ let of_string ?(status = Text) text =
 let status_style = function
   | Current -> { fg = bg_color; bg = { r = 255; g = 248; b = 231 } }
   | Pending
-  | Text ->
+  | SelectedText
+  | SummaryTable ->
       { fg = { r = 255; g = 248; b = 231 }; bg = bg_color }
   | Correct -> { fg = { r = 128; g = 239; b = 128 }; bg = bg_color }
-  | Mistake -> { fg = { r = 170; g = 0; b = 255 }; bg = bg_color }
-  | SelectedText -> { fg = { r = 153; g = 150; b = 141 }; bg = bg_color }
-
-let string_of_status = function
-  | Current -> "Cur"
-  | Pending -> "Pen"
-  | Correct -> "Y"
-  | Mistake -> "X"
-  | Text -> "Txt"
-  | SelectedText -> "Sxt"
+  | Mistake -> { fg = { r = 180; g = 100; b = 255 }; bg = bg_color }
+  | Text -> { fg = { r = 153; g = 150; b = 141 }; bg = bg_color }
 
 let style_of_letter ({ c = _; status } : letter) : style = status_style status
 
@@ -83,7 +77,7 @@ let to_rows (letters : t) (max_width : int) : t list =
   in
   aux [] [] letters
 
-let update_letters (letters : t) (pressed : char) : t =
+let update (letters : t) (pressed : char) : t =
   let get_status target got =
     if Char.compare target got = 0 then Correct else Mistake
   in
@@ -115,9 +109,4 @@ let rec finished (letters : t) : bool =
   | { c = _; status = Current } :: _ -> false
   | _ :: tl -> finished tl
 
-let print_letters (letters : t) : unit =
-  letters
-  |> List.map ~f:(fun { c; status } ->
-         Printf.sprintf "{%c %s}" c (string_of_status status) )
-  |> String.concat ~sep:" "
-  |> fun x -> x ^ "\n" |> Stdio.print_string
+let exists letters ~f : bool = List.exists letters ~f

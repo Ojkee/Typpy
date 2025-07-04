@@ -11,14 +11,31 @@ let row_to_image row =
   row |> List.map ~f:char_to_image |> List.reduce ~f:I.( <|> )
   |> Option.value ~default:I.empty
 
-let letter_rows_to_img (letter_rows : Letters.t list) =
+let starting_row letter_rows =
+  let unwrap x =
+    match x with
+    | Some (i, _) -> i
+    | None -> 0
+  in
+  let has_current x =
+    Letters.exists x ~f:(fun { status; _ } ->
+        match status with
+        | Current -> true
+        | _ -> false )
+  in
+  List.findi letter_rows ~f:(fun _ x -> has_current x) |> unwrap
+
+let letter_rows_to_img ?n_rows letter_rows =
+  let n = n_rows |> Option.value ~default:(List.length letter_rows) in
+  let s = starting_row letter_rows |> fun s -> max 0 (s - (n / 2)) in
   letter_rows
+  |> List.filteri ~f:(fun i _ -> s <= i && i < s + n)
   |> List.map ~f:Letters.to_list
   |> List.map ~f:row_to_image |> List.reduce ~f:I.( <-> )
   |> Option.value ~default:I.empty
 
-let letters_to_image (letters : Letters.t) ~(max_width : int) =
-  Letters.to_rows letters max_width |> letter_rows_to_img
+let letters_to_image { Window.letters; _ } ~(max_width : int) =
+  Letters.to_rows letters max_width |> letter_rows_to_img ~n_rows:5
 
 let make_centered_image image width height =
   let w = I.width image in
@@ -40,14 +57,12 @@ let render_row row widths =
   let padded = List.map2_exn row widths ~f:pad in
   "| " ^ String.concat ~sep:" | " padded ^ " |"
 
-let to_string_list ((i, t), count) =
-  [ String.make 1 i; String.make 1 t; Int.to_string count ]
-
 let render_mistakes_table mistakes =
   let header = [ "Typed"; "Expected"; "Count" ] in
   let widths = List.map ~f:(fun word -> String.length word + 10) header in
   let mistakes_str =
-    mistakes |> List.map ~f:to_string_list
+    mistakes
+    |> List.map ~f:Mistakes.mistake_to_string_list
     |> List.map ~f:(fun row -> render_row row widths)
   in
   render_separator widths :: render_row header widths :: render_separator widths
@@ -75,15 +90,7 @@ let make_time_info execution_time num_letters len =
   ]
   |> String.concat ~sep:""
 
-let render_summary_image { Window.mistakes; num_letters; execution_time } =
-  let mistakes = Mistakes.common_counter_top_n mistakes 5 in
-  let table = render_mistakes_table mistakes in
-  let len = table |> List.hd |> Option.value ~default:"" |> String.length in
-  let time_info = [ make_time_info execution_time num_letters len ] in
-  let info = info_table [ "'r' to restart"; "'esc' to exit" ] len in
-  List.map (time_info @ table @ info) ~f:Letters.of_string |> letter_rows_to_img
-
-let render_menu configs ~max_width =
+let render_configs configs ~max_width =
   let cfg_to_letters { Window.ctype; value; selected } =
     let name = Window.config_type_to_string ctype in
     let value_string = Window.config_value_to_string value in
@@ -94,15 +101,32 @@ let render_menu configs ~max_width =
   in
   List.map configs ~f:cfg_to_letters |> letter_rows_to_img
 
-let frame window ~max_width ~cols ~rows =
-  let backgound_color_attr = A.(bg (rgb_888 ~r:51 ~g:51 ~b:51)) in
-  let backgound = I.char backgound_color_attr ' ' cols rows in
+let render_typing window ~max_width = window |> letters_to_image ~max_width
+
+let render_summary_image { Window.mistakes; num_letters; execution_time } =
+  let mistakes = Mistakes.common_counter_top_n mistakes 5 in
+  let table = render_mistakes_table mistakes in
+  let len = table |> List.hd |> Option.value ~default:"" |> String.length in
+  let time_info = [ make_time_info execution_time num_letters len ] in
+  let info = info_table [ "'r' to restart"; "'esc' to exit" ] len in
+  let of_string = Letters.of_string ~status:SummaryTable in
+  List.map (time_info @ table @ info) ~f:of_string |> letter_rows_to_img
+
+let menu_width cols = 2 * cols / 5
+let typing_width cols = 4 * cols / 5
+
+let backgound cols rows =
+  I.char A.(bg (rgb_888 ~r:51 ~g:51 ~b:51)) ' ' cols rows
+
+let frame window ~cols ~rows =
   let draw_centered img =
     let centered = make_centered_image img cols rows in
-    I.(centered </> backgound)
+    I.(centered </> backgound cols rows)
   in
   match window.Window.current_state with
-  | Window.Menu -> render_menu window.configs ~max_width |> draw_centered
-  | Window.Typing { letters; _ } ->
-      letters |> letters_to_image ~max_width |> draw_centered
+  | Window.Menu ->
+      render_configs window.configs ~max_width:(menu_width cols)
+      |> draw_centered
+  | Window.Typing typing ->
+      render_typing typing ~max_width:(typing_width cols) |> draw_centered
   | Window.Summary summary -> render_summary_image summary |> draw_centered

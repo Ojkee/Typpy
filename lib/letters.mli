@@ -7,6 +7,7 @@ type letter_status =
   | Mistake
   | Text
   | SelectedText
+  | SummaryTable
 
 type letter = {
   c : char;
@@ -39,7 +40,7 @@ val style_of_letter : letter -> style
 val init_n_as_letters : Words.t -> int -> t
 val next_space : t -> int
 val to_rows : t -> int -> t list
-val update_letters : t -> char -> t
+val update : t -> char -> t
 val delete_last_current : t -> t
 val finished : t -> bool
-val print_letters : t -> unit
+val exists : t -> f:(letter -> bool) -> bool

@@ -34,8 +34,9 @@ dune exec ./main.exe
 ```
 
 # TODO
-- [ ] Selection menu
+- [x] Selection menu
 - [ ] Refactor every window state to modules
+- [ ] Infinity mode
 - [ ] Save progression
 - [ ] Generating words with common letter mistakes
 - [ ] Per-character timing for advanced stats
