@@ -9,7 +9,7 @@ type config_value =
 type config_type =
   | WordsNumber
   | Punctuation
-  | Uppercase
+  | Capitalize
 
 type config = {
   ctype : config_type;

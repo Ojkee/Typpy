@@ -28,8 +28,8 @@ let starting_row letter_rows =
 let letter_rows_to_img ?n_rows letter_rows =
   let n = n_rows |> Option.value ~default:(List.length letter_rows) in
   let s = starting_row letter_rows |> fun s -> max 0 (s - (n / 2)) in
-  letter_rows
-  |> List.filteri ~f:(fun i _ -> s <= i && i < s + n)
+  let between i _ = s <= i && i < s + n in
+  letter_rows |> List.filteri ~f:between
   |> List.map ~f:Letters.to_list
   |> List.map ~f:row_to_image |> List.reduce ~f:I.( <-> )
   |> Option.value ~default:I.empty

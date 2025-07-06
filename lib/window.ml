@@ -11,7 +11,7 @@ type config_value =
 type config_type =
   | WordsNumber
   | Punctuation
-  | Uppercase
+  | Capitalize
 
 type config = {
   ctype : config_type;
@@ -50,7 +50,7 @@ type t = {
 let config_type_to_string = function
   | WordsNumber -> "number of words"
   | Punctuation -> "punctuation"
-  | Uppercase -> "uppercase"
+  | Capitalize -> "capitalize"
 
 let config_value_to_string = function
   | Int (Finite x) -> x
@@ -61,14 +61,14 @@ let create_default_configs () =
   [
     { ctype = WordsNumber; value = Int (Finite "5"); selected = true };
     { ctype = Punctuation; value = Bool false; selected = false };
-    { ctype = Uppercase; value = Bool false; selected = false };
+    { ctype = Capitalize; value = Bool false; selected = false };
   ]
 
 let same_ctype ctype cfg_type =
   match (ctype, cfg_type) with
   | WordsNumber, WordsNumber -> true
   | Punctuation, Punctuation -> true
-  | Uppercase, Uppercase -> true
+  | Capitalize, Capitalize -> true
   | _, _ -> false
 
 let find_config cfg_type configs =
@@ -86,7 +86,9 @@ let create_typing { lexicon = { words; _ }; configs; _ } =
     | Finite x -> Int.of_string x
     | Infinite -> 100
   in
-  let letters = Letters.init_n_as_letters words n in
+  let punctuation = false in
+  let capitalize = true in
+  let letters = Letters.init_n_as_letters ~words ~n ~punctuation ~capitalize in
   let mistakes = Mistakes.create () in
   Typing { letters; current_row = 0; mistakes; start_time = None }
 
@@ -175,10 +177,9 @@ let handle_input_char window input : t =
           let num_letters = Letters.lenght letters in
           update_state (Summary { mistakes; num_letters; execution_time = 0. })
       )
-  | Summary _ ->
-      if Char.( = ) input 'r' then
-        { window with current_state = create_typing window }
-      else window
+  | Summary _ when Char.( = ) input 'r' ->
+      { window with current_state = create_typing window }
+  | Summary _ -> window
 
 let delete_value = function
   | { selected = false; _ } as cfg' -> cfg'

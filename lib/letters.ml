@@ -50,11 +50,23 @@ let status_style = function
 
 let style_of_letter ({ c = _; status } : letter) : style = status_style status
 
-let init_n_as_letters (words : Words.t) (n : int) : t =
-  Lazy_table.random_n_words words n
-  |> String.concat ~sep:" " |> String.to_list
-  |> List.mapi ~f:(fun i c ->
-         { c; status = (if i = 0 then Current else Pending) } )
+let maybe_capitalize word ~(chance : float) =
+  assert (Float.( <= ) 0. chance && Float.( <= ) chance 1.);
+  Random.self_init ();
+  let r = Random.float 1. in
+  if Float.( <= ) r chance then String.capitalize word else word
+
+let init_n_as_letters ~words ~n ~punctuation ~capitalize =
+  let to_letter_list lst =
+    lst |> String.concat ~sep:" " |> String.to_list
+    |> List.mapi ~f:(fun i c ->
+           { c; status = (if i = 0 then Current else Pending) } )
+  in
+  let capitalize' word =
+    if capitalize then maybe_capitalize word ~chance:0.2 else word
+  in
+  ignore punctuation;
+  Lazy_table.random_n_words words n |> List.map ~f:capitalize' |> to_letter_list
 
 let next_space (letters : t) : int =
   let rec aux acc = function

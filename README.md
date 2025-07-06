@@ -35,6 +35,8 @@ dune exec ./main.exe
 
 # TODO
 - [x] Selection menu
+- [ ] Punctuation and capitalize modes
+- [ ] Propper navigation between window states
 - [ ] Refactor every window state to modules
 - [ ] Infinity mode
 - [ ] Save progression
