@@ -99,16 +99,31 @@ let render_configs configs ~max_width =
     [ name; value_string ] |> String.concat ~sep:gap
     |> Letters.of_string ~status:(if selected then SelectedText else Text)
   in
-  List.map configs ~f:cfg_to_letters |> letter_rows_to_img
+  let of_string = Letters.of_string ~status:SummaryTable in
+  let info =
+    info_table
+      [
+        " ";
+        "'tab' to select next";
+        "'space' to toggle";
+        "'enter' to start";
+        "'esc' to exit";
+      ]
+      max_width
+    |> List.map ~f:of_string
+  in
+  List.map configs ~f:cfg_to_letters |> fun x -> x @ info |> letter_rows_to_img
 
 let render_typing window ~max_width = window |> letters_to_image ~max_width
 
-let render_summary_image { Window.mistakes; num_letters; execution_time } =
-  let mistakes = Mistakes.common_counter_top_n mistakes 5 in
+let render_summary_image
+    { Window.mistakes; num_letters; execution_time; mistake_start; mistake_n } =
+  let start = Int.rem mistake_start (Mistakes.length mistakes) in
+  let mistakes = Mistakes.common_counter_n mistakes ~start ~n:mistake_n in
   let table = render_mistakes_table mistakes in
   let len = table |> List.hd |> Option.value ~default:"" |> String.length in
   let time_info = [ make_time_info execution_time num_letters len ] in
-  let info = info_table [ "'r' to restart"; "'esc' to exit" ] len in
+  let info = info_table [ " "; "'enter' to restart"; "'esc' to exit" ] len in
   let of_string = Letters.of_string ~status:SummaryTable in
   List.map (time_info @ table @ info) ~f:of_string |> letter_rows_to_img
 

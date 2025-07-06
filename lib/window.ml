@@ -32,6 +32,8 @@ type summary = {
   mistakes : Mistakes.t;
   num_letters : int;
   execution_time : float;
+  mistake_start : int;
+  mistake_n : int;
 }
 
 type state =
@@ -182,13 +184,26 @@ let handle_input_char window input : t =
       | true, Some start ->
           let num_letters = Letters.lenght letters in
           let execution_time = Unix.gettimeofday () -. start in
-          update_state (Summary { mistakes; num_letters; execution_time })
+          update_state
+            (Summary
+               {
+                 mistakes;
+                 num_letters;
+                 execution_time;
+                 mistake_start = 0;
+                 mistake_n = 5;
+               } )
       | true, None ->
           let num_letters = Letters.lenght letters in
-          update_state (Summary { mistakes; num_letters; execution_time = 0. })
-      )
-  | Summary _ when Char.( = ) input 'r' ->
-      { window with current_state = create_typing window }
+          update_state
+            (Summary
+               {
+                 mistakes;
+                 num_letters;
+                 execution_time = 0.;
+                 mistake_start = 0;
+                 mistake_n = 5;
+               } ) )
   | Summary _ -> window
 
 let delete_value = function
@@ -225,10 +240,21 @@ let handle_tab window =
   match window.current_state with
   | Menu -> { window with configs = select_next_config window.configs }
   | Typing _ -> window
-  | Summary _ -> window
+  | Summary summary ->
+      {
+        window with
+        current_state =
+          Summary { summary with mistake_start = summary.mistake_start + 1 };
+      }
 
 let handle_enter window =
   match window.current_state with
   | Menu -> { window with current_state = create_typing window }
   | Typing _ -> window
-  | Summary _ -> window
+  | Summary _ -> { window with current_state = create_typing window }
+
+let handle_esc window =
+  match window.current_state with
+  | Menu -> None
+  | Typing _ -> Some { window with current_state = Menu }
+  | Summary _ -> Some { window with current_state = Menu }

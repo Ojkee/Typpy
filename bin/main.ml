@@ -9,7 +9,10 @@ let () =
     let frame = Render.frame window ~rows ~cols in
     Term.image term frame;
     match Term.event term with
-    | `Key (`Escape, _) -> ()
+    | `Key (`Escape, _) -> (
+        match Window.handle_esc window with
+        | None -> ()
+        | Some window' -> loop window' )
     | `Key (`Tab, _) -> loop (Window.handle_tab window)
     | `Key (`Enter, _) -> loop (Window.handle_enter window)
     | `Key (`ASCII c, _) -> loop (Window.handle_input_char window c)

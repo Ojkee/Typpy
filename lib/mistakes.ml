@@ -17,6 +17,8 @@ let make_mistake ~(inserted : char) ~(target : char) ~(prefix : char option)
     ~(suffix : char option) : mistake =
   { inserted; target; prefix; suffix }
 
+let length mistakes = List.length mistakes
+
 let mistake_to_string_list ((i, t), count) =
   [ String.make 1 i; String.make 1 t; Int.to_string count ]
 
@@ -48,7 +50,11 @@ let common_counter (mistakes : t) : mistake_with_count list =
          increase_counter (i, t) );
   counter |> Hashtbl.to_alist
 
-let common_counter_top_n (mistakes : t) (n : int) : mistake_with_count list =
-  common_counter mistakes
-  |> List.sort ~compare:(fun (_, c1) (_, c2) -> Int.compare c2 c1)
-  |> fun x -> List.take x n
+let common_counter_n ?(start = 0) ?(n = 5) (mistakes : t) :
+    mistake_with_count list =
+  let m =
+    common_counter mistakes
+    |> List.sort ~compare:(fun (_, c1) (_, c2) -> Int.compare c2 c1)
+    |> fun x -> List.take x (n + start)
+  in
+  if List.length m < start then m else List.drop m start

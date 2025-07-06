@@ -56,7 +56,7 @@ let is_rand_above_threshold ~chance =
   let r = Random.float 1. in
   Float.( >= ) r chance
 
-let maybe_capitalize word ~(chance : float) =
+let maybe_capitalize word ~chance =
   if is_rand_above_threshold ~chance then word else String.capitalize word
 
 let get_random_punctuation () =
@@ -95,7 +95,7 @@ let get_random_punctuation () =
   let r = Random.int (Array.length p) in
   p.(r)
 
-let maybe_punctuate word ~(chance : float) =
+let maybe_punctuate word ~chance =
   if is_rand_above_threshold ~chance then word
   else
     match get_random_punctuation () with

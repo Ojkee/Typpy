@@ -42,3 +42,6 @@ dune exec ./main.exe
 - [ ] Save progression
 - [ ] Generating words with common letter mistakes
 - [ ] Per-character timing for advanced stats
+
+# Bugs
+- [ ] Summary wraps incorectly at the end of big table

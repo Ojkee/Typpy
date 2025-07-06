@@ -30,6 +30,8 @@ type summary = {
   mistakes : Mistakes.t;
   num_letters : int;
   execution_time : float;
+  mistake_start : int;
+  mistake_n : int;
 }
 
 type state =
@@ -53,3 +55,4 @@ val handle_input_char : t -> char -> t
 val handle_backspace : t -> t
 val handle_tab : t -> t
 val handle_enter : t -> t
+val handle_esc : t -> t option
