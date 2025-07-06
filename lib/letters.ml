@@ -50,11 +50,62 @@ let status_style = function
 
 let style_of_letter ({ c = _; status } : letter) : style = status_style status
 
-let maybe_capitalize word ~(chance : float) =
+let is_rand_above_threshold ~chance =
   assert (Float.( <= ) 0. chance && Float.( <= ) chance 1.);
   Random.self_init ();
   let r = Random.float 1. in
-  if Float.( <= ) r chance then String.capitalize word else word
+  Float.( >= ) r chance
+
+let maybe_capitalize word ~(chance : float) =
+  if is_rand_above_threshold ~chance then word else String.capitalize word
+
+let get_random_punctuation () =
+  let p =
+    [|
+      "!";
+      "\"";
+      "#";
+      "$";
+      "%";
+      "&";
+      "'";
+      "*";
+      "+";
+      ",";
+      "-";
+      ".";
+      "/";
+      ":";
+      ";";
+      "<";
+      "=";
+      ">";
+      "?";
+      "[";
+      "\\";
+      "^";
+      "_";
+      "`";
+      "{";
+      "|";
+      "~";
+    |]
+  in
+  Random.self_init ();
+  let r = Random.int (Array.length p) in
+  p.(r)
+
+let maybe_punctuate word ~(chance : float) =
+  if is_rand_above_threshold ~chance then word
+  else
+    match get_random_punctuation () with
+    | ("\'" | "\"") as q -> q ^ word ^ q
+    | "(" -> "(" ^ word ^ ")"
+    | "{" -> "{" ^ word ^ "}"
+    | "[" -> "[" ^ word ^ "]"
+    | ("`" | "~" | "#") as prefix -> prefix ^ word
+    | (">" | "<" | "+" | "*" | "\\") as infix -> word ^ " " ^ infix
+    | p -> word ^ p
 
 let init_n_as_letters ~words ~n ~punctuation ~capitalize =
   let to_letter_list lst =
@@ -65,8 +116,11 @@ let init_n_as_letters ~words ~n ~punctuation ~capitalize =
   let capitalize' word =
     if capitalize then maybe_capitalize word ~chance:0.2 else word
   in
-  ignore punctuation;
-  Lazy_table.random_n_words words n |> List.map ~f:capitalize' |> to_letter_list
+  let punctuate' word =
+    if punctuation then maybe_punctuate word ~chance:0.2 else word
+  in
+  Lazy_table.random_n_words words n
+  |> List.map ~f:capitalize' |> List.map ~f:punctuate' |> to_letter_list
 
 let next_space (letters : t) : int =
   let rec aux acc = function

@@ -71,23 +71,33 @@ let same_ctype ctype cfg_type =
   | Capitalize, Capitalize -> true
   | _, _ -> false
 
-let find_config cfg_type configs =
+let find_config_value cfg_type configs =
   List.find configs ~f:(fun cfg -> same_ctype cfg.ctype cfg_type)
   |> Option.value_exn ~message:"Config not found"
-  |> fun { value; _ } ->
-  match value with
-  | Int x -> x
+  |> fun { value; _ } -> value
+
+let get_int_from_config cfgtype configs =
+  let num_words =
+    find_config_value cfgtype configs |> fun x ->
+    match x with
+    | Int x -> Some x
+    | _ -> None
+  in
+  match num_words with
+  | Some (Finite x) -> Int.of_string x
+  | Some Infinite -> 100
+  | None -> assert false
+
+let get_bool_from_config cfgtype configs =
+  find_config_value cfgtype configs |> fun x ->
+  match x with
+  | Bool x -> x
   | _ -> assert false
 
 let create_typing { lexicon = { words; _ }; configs; _ } =
-  let num_words = find_config WordsNumber configs in
-  let n =
-    match num_words with
-    | Finite x -> Int.of_string x
-    | Infinite -> 100
-  in
-  let punctuation = false in
-  let capitalize = true in
+  let n = get_int_from_config WordsNumber configs in
+  let punctuation = get_bool_from_config Punctuation configs in
+  let capitalize = get_bool_from_config Capitalize configs in
   let letters = Letters.init_n_as_letters ~words ~n ~punctuation ~capitalize in
   let mistakes = Mistakes.create () in
   Typing { letters; current_row = 0; mistakes; start_time = None }
