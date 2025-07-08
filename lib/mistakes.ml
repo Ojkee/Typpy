@@ -38,12 +38,8 @@ let common_counter (mistakes : t) : mistake_with_count list =
   let counter : (char * char, int) Hashtbl.Poly.t = Hashtbl.Poly.create () in
   let increase_counter key =
     match Hashtbl.find counter key with
-    | None ->
-        Hashtbl.set counter ~key ~data:1;
-        ()
-    | Some data ->
-        Hashtbl.set counter ~key ~data:(data + 1);
-        ()
+    | None -> Hashtbl.set counter ~key ~data:1
+    | Some count -> Hashtbl.set counter ~key ~data:(count + 1)
   in
   mistakes
   |> List.iter ~f:(fun { inserted = i; target = t; _ } ->
@@ -55,6 +51,10 @@ let common_counter_n ?(start = 0) ?(n = 5) (mistakes : t) :
   let m =
     common_counter mistakes
     |> List.sort ~compare:(fun (_, c1) (_, c2) -> Int.compare c2 c1)
-    |> fun x -> List.take x (n + start)
   in
-  if List.length m < start then m else List.drop m start
+  let start = Int.rem start (List.length m) in
+  let len = min n (List.length m - start) |> fun x -> max 0 x in
+  let start_len = n - len in
+  let offset = m |> fun x -> List.sub x ~pos:start ~len in
+  let wrapped = m |> fun x -> List.sub x ~pos:0 ~len:start_len in
+  offset @ wrapped

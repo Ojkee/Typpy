@@ -4,6 +4,11 @@ open Lib
 let () =
   let term = Term.create () in
   let cols, rows = Term.size term in
+  let rec has_ctrl = function
+    | [] -> false
+    | `Ctrl :: _ -> true
+    | _ :: tl -> has_ctrl tl
+  in
 
   let rec loop window =
     let frame = Render.frame window ~rows ~cols in

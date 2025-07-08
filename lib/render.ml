@@ -17,13 +17,13 @@ let starting_row letter_rows =
     | Some (i, _) -> i
     | None -> 0
   in
-  let has_current x =
+  let has_current _ x =
     Letters.exists x ~f:(fun { status; _ } ->
         match status with
         | Current -> true
         | _ -> false )
   in
-  List.findi letter_rows ~f:(fun _ x -> has_current x) |> unwrap
+  List.findi letter_rows ~f:has_current |> unwrap
 
 let letter_rows_to_img ?n_rows letter_rows =
   let n = n_rows |> Option.value ~default:(List.length letter_rows) in

@@ -33,10 +33,15 @@ dune build
 dune exec ./main.exe
 ```
 
+# Dataset
+Dataset contains 479k unfiltered english words. 
+[Link to dataset](https://github.com/dwyl/english-words?tab=readme-ov-file)
+
 # TODO
 - [x] Selection menu
+- [x] Propper navigation between window states
 - [ ] Punctuation and capitalize modes
-- [ ] Propper navigation between window states
+- [ ] Implement arrow keys
 - [ ] Refactor every window state to modules
 - [ ] Infinity mode
 - [ ] Save progression
@@ -44,4 +49,4 @@ dune exec ./main.exe
 - [ ] Per-character timing for advanced stats
 
 # Bugs
-- [ ] Summary wraps incorectly at the end of big table
+- [x] Summary wraps incorectly at the end of big table
