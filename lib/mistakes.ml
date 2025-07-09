@@ -13,7 +13,7 @@ type mistake_with_count = (char * char) * int
 let string_of_char (c : char) : string = String.make 1 c
 let create () : t = []
 
-let make_mistake ~(inserted : char) ~(target : char) ~(prefix : char option)
+let make ~(inserted : char) ~(target : char) ~(prefix : char option)
     ~(suffix : char option) : mistake =
   { inserted; target; prefix; suffix }
 
@@ -32,7 +32,7 @@ let suffix_ngram = function
       Some (string_of_char t ^ string_of_char s)
   | { inserted = _; target = _; prefix = _; suffix = None } -> None
 
-let add_mistake (mistakes : t) (m : mistake) : t = m :: mistakes
+let add (mistakes : t) (m : mistake) : t = m :: mistakes
 
 let common_counter (mistakes : t) : mistake_with_count list =
   let counter : (char * char, int) Hashtbl.Poly.t = Hashtbl.Poly.create () in
@@ -58,3 +58,26 @@ let common_counter_n ?(start = 0) ?(n = 5) (mistakes : t) :
   let offset = m |> fun x -> List.sub x ~pos:start ~len in
   let wrapped = m |> fun x -> List.sub x ~pos:0 ~len:start_len in
   offset @ wrapped
+
+let add_if_happened mistakes letters input =
+  let make ?prefix ?suffix target =
+    make ~inserted:input ~target ~prefix ~suffix |> add mistakes
+  in
+  let rec aux (lst : Letters.letter list) =
+    match lst with
+    | [] -> mistakes
+    | { c = _; status = Current } :: _ -> mistakes
+    | { c = target; status = Mistake } :: { c = after; status = Current } :: _
+      ->
+        make ~suffix:after target
+    | { c = before; _ }
+      :: { c = target; status = Mistake }
+      :: { c = after; status = Current }
+      :: _ ->
+        make ~prefix:before ~suffix:after target
+    | [ { c = before; _ }; { c = target; status = Mistake } ] ->
+        make ~prefix:before target
+    | [ { c = target; status = Mistake } ] -> make target
+    | _ :: tl -> aux tl
+  in
+  aux (Letters.to_list letters)

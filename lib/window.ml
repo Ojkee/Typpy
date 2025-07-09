@@ -43,30 +43,6 @@ let create () =
   let configs = Configs.create () in
   { current_state; lexicon = { words (* ; memo *) }; configs }
 
-let mistake_if_happened letters mistakes input =
-  let make ?prefix ?suffix target =
-    Mistakes.make_mistake ~inserted:input ~target ~prefix ~suffix
-    |> Mistakes.add_mistake mistakes
-  in
-  let rec aux (lst : Letters.letter list) =
-    match lst with
-    | [] -> mistakes
-    | { c = _; status = Current } :: _ -> mistakes
-    | { c = target; status = Mistake } :: { c = after; status = Current } :: _
-      ->
-        make ~suffix:after target
-    | { c = before; _ }
-      :: { c = target; status = Mistake }
-      :: { c = after; status = Current }
-      :: _ ->
-        make ~prefix:before ~suffix:after target
-    | [ { c = before; _ }; { c = target; status = Mistake } ] ->
-        make ~prefix:before target
-    | [ { c = target; status = Mistake } ] -> make target
-    | _ :: tl -> aux tl
-  in
-  aux (Letters.to_list letters)
-
 let handle_menu_input_char { configs; _ } c = Configs.insert_value configs c
 
 let handle_input_char window input : t =
@@ -75,7 +51,7 @@ let handle_input_char window input : t =
   | Menu -> { window with configs = handle_menu_input_char window input }
   | Typing ({ letters; mistakes; start_time; _ } as typing) -> (
       let letters = Letters.update letters input in
-      let mistakes = mistake_if_happened letters mistakes input in
+      let mistakes = Mistakes.add_if_happened mistakes letters input in
       let num_letters = Letters.lenght letters in
       match (Letters.finished letters, start_time) with
       | false, None ->
