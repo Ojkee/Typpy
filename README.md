@@ -34,19 +34,21 @@ dune exec ./main.exe
 ```
 
 # Dataset
-Dataset contains 479k unfiltered english words. 
+Dataset contains 370k unfiltered english words. 
 [Link to dataset](https://github.com/dwyl/english-words?tab=readme-ov-file)
 
 # TODO
 - [x] Selection menu
 - [x] Propper navigation between window states
-- [ ] Punctuation and capitalize modes
-- [ ] Implement arrow keys
+- [x] Punctuation and capitalize modes
+- [ ] Infinity mode 
+- [ ] Word counter
 - [ ] Refactor every window state to modules
-- [ ] Infinity mode
+- [ ] Adaptive word randomizer on infinity mode
 - [ ] Save progression
 - [ ] Generating words with common letter mistakes
 - [ ] Per-character timing for advanced stats
+- [ ] Implement arrow keys
 
 # Bugs
 - [x] Summary wraps incorectly at the end of big table

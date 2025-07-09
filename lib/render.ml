@@ -11,31 +11,21 @@ let row_to_image row =
   row |> List.map ~f:char_to_image |> List.reduce ~f:I.( <|> )
   |> Option.value ~default:I.empty
 
-let starting_row letter_rows =
-  let unwrap x =
-    match x with
-    | Some (i, _) -> i
-    | None -> 0
-  in
-  let has_current _ x =
-    Letters.exists x ~f:(fun { status; _ } ->
-        match status with
-        | Current -> true
-        | _ -> false )
-  in
-  List.findi letter_rows ~f:has_current |> unwrap
-
-let letter_rows_to_img ?n_rows letter_rows =
-  let n = n_rows |> Option.value ~default:(List.length letter_rows) in
-  let s = starting_row letter_rows |> fun s -> max 0 (s - (n / 2)) in
-  let between i _ = s <= i && i < s + n in
-  letter_rows |> List.filteri ~f:between
+let letter_rows_to_img letter_rows =
+  letter_rows
   |> List.map ~f:Letters.to_list
   |> List.map ~f:row_to_image |> List.reduce ~f:I.( <-> )
   |> Option.value ~default:I.empty
 
+let crop_rows ?n_rows rows =
+  let n = n_rows |> Option.value ~default:(List.length rows) in
+  let s = Letters.current_row_idx rows |> fun s -> max 0 (s - (n / 2)) in
+  let between i _ = s <= i && i < s + n in
+  rows |> List.filteri ~f:between
+
 let letters_to_image { Window.letters; _ } ~(max_width : int) =
-  Letters.to_rows letters max_width |> letter_rows_to_img ~n_rows:5
+  Letters.to_rows letters ~max_width
+  |> crop_rows ~n_rows:5 |> letter_rows_to_img
 
 let make_centered_image image width height =
   let w = I.width image in

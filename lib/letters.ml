@@ -131,7 +131,7 @@ let next_space (letters : t) : int =
   in
   aux 1 letters
 
-let to_rows (letters : t) (max_width : int) : t list =
+let to_rows (letters : t) ~(max_width : int) : t list =
   let rec aux current_row rows = function
     | [] -> List.rev (current_row :: rows)
     | lst ->
@@ -176,3 +176,17 @@ let rec finished (letters : t) : bool =
   | _ :: tl -> finished tl
 
 let exists letters ~f : bool = List.exists letters ~f
+
+let current_row_idx letter_rows =
+  let unwrap x =
+    match x with
+    | Some (i, _) -> i
+    | None -> 0
+  in
+  let has_current _ x =
+    exists x ~f:(fun { status; _ } ->
+        match status with
+        | Current -> true
+        | _ -> false )
+  in
+  List.findi letter_rows ~f:has_current |> unwrap

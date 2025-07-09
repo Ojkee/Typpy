@@ -10,6 +10,7 @@ type config_type =
   | WordsNumber
   | Punctuation
   | Capitalize
+  | Adaptive
 
 type config = {
   ctype : config_type;

@@ -12,6 +12,7 @@ type config_type =
   | WordsNumber
   | Punctuation
   | Capitalize
+  | Adaptive
 
 type config = {
   ctype : config_type;
@@ -53,6 +54,7 @@ let config_type_to_string = function
   | WordsNumber -> "number of words"
   | Punctuation -> "punctuation"
   | Capitalize -> "capitalize"
+  | Adaptive -> "adaptive"
 
 let config_value_to_string = function
   | Int (Finite x) -> x
@@ -64,6 +66,7 @@ let create_default_configs () =
     { ctype = WordsNumber; value = Int (Finite "5"); selected = true };
     { ctype = Punctuation; value = Bool false; selected = false };
     { ctype = Capitalize; value = Bool false; selected = false };
+    { ctype = Adaptive; value = Bool false; selected = false };
   ]
 
 let same_ctype ctype cfg_type =
@@ -170,6 +173,7 @@ let handle_input_char window input : t =
   | Typing ({ letters; mistakes; start_time; _ } as typing) -> (
       let letters = Letters.update letters input in
       let mistakes = mistake_if_happened letters mistakes input in
+      let num_letters = Letters.lenght letters in
       match (Letters.finished letters, start_time) with
       | false, None ->
           update_state
@@ -182,7 +186,6 @@ let handle_input_char window input : t =
                } )
       | false, _ -> update_state (Typing { typing with letters; mistakes })
       | true, Some start ->
-          let num_letters = Letters.lenght letters in
           let execution_time = Unix.gettimeofday () -. start in
           update_state
             (Summary
@@ -194,7 +197,6 @@ let handle_input_char window input : t =
                  mistake_n = 5;
                } )
       | true, None ->
-          let num_letters = Letters.lenght letters in
           update_state
             (Summary
                {
