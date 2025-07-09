@@ -81,14 +81,6 @@ let make_time_info execution_time num_letters len =
   |> String.concat ~sep:""
 
 let render_configs configs ~max_width =
-  let cfg_to_letters { Window.ctype; value; selected } =
-    let name = Window.config_type_to_string ctype in
-    let value_string = Window.config_value_to_string value in
-    let gap_len = max_width - String.length name - String.length value_string in
-    let gap = String.make gap_len ' ' in
-    [ name; value_string ] |> String.concat ~sep:gap
-    |> Letters.of_string ~status:(if selected then SelectedText else Text)
-  in
   let of_string = Letters.of_string ~status:SummaryTable in
   let info =
     info_table
@@ -102,7 +94,8 @@ let render_configs configs ~max_width =
       max_width
     |> List.map ~f:of_string
   in
-  List.map configs ~f:cfg_to_letters |> fun x -> x @ info |> letter_rows_to_img
+  Configs.to_letters configs ~max_width |> fun x ->
+  x @ info |> letter_rows_to_img
 
 let render_typing window ~max_width = window |> letters_to_image ~max_width
 

@@ -1,27 +1,5 @@
 open Base
 
-type int_type =
-  | Finite of string
-  | Infinite
-
-type config_value =
-  | Int of int_type
-  | Bool of bool
-
-type config_type =
-  | WordsNumber
-  | Punctuation
-  | Capitalize
-  | Adaptive
-
-type config = {
-  ctype : config_type;
-  value : config_value;
-  selected : bool;
-}
-
-type configs = config list
-
 type typing = {
   letters : Letters.t;
   current_row : int;
@@ -47,62 +25,13 @@ type lexicon = { words : Words.t (* memo : Lazy_table.t; *) }
 type t = {
   current_state : state;
   lexicon : lexicon;
-  configs : configs;
+  configs : Configs.t;
 }
 
-let config_type_to_string = function
-  | WordsNumber -> "number of words"
-  | Punctuation -> "punctuation"
-  | Capitalize -> "capitalize"
-  | Adaptive -> "adaptive"
-
-let config_value_to_string = function
-  | Int (Finite x) -> x
-  | Int Infinite -> "inf"
-  | Bool x -> Bool.to_string x
-
-let create_default_configs () =
-  [
-    { ctype = WordsNumber; value = Int (Finite "5"); selected = true };
-    { ctype = Punctuation; value = Bool false; selected = false };
-    { ctype = Capitalize; value = Bool false; selected = false };
-    { ctype = Adaptive; value = Bool false; selected = false };
-  ]
-
-let same_ctype ctype cfg_type =
-  match (ctype, cfg_type) with
-  | WordsNumber, WordsNumber -> true
-  | Punctuation, Punctuation -> true
-  | Capitalize, Capitalize -> true
-  | _, _ -> false
-
-let find_config_value cfg_type configs =
-  List.find configs ~f:(fun cfg -> same_ctype cfg.ctype cfg_type)
-  |> Option.value_exn ~message:"Config not found"
-  |> fun { value; _ } -> value
-
-let get_int_from_config cfgtype configs =
-  let num_words =
-    find_config_value cfgtype configs |> fun x ->
-    match x with
-    | Int x -> Some x
-    | _ -> None
-  in
-  match num_words with
-  | Some (Finite x) -> Int.of_string x
-  | Some Infinite -> 100
-  | None -> assert false
-
-let get_bool_from_config cfgtype configs =
-  find_config_value cfgtype configs |> fun x ->
-  match x with
-  | Bool x -> x
-  | _ -> assert false
-
 let create_typing { lexicon = { words; _ }; configs; _ } =
-  let n = get_int_from_config WordsNumber configs in
-  let punctuation = get_bool_from_config Punctuation configs in
-  let capitalize = get_bool_from_config Capitalize configs in
+  let n = Configs.get_int configs WordsNumber in
+  let punctuation = Configs.get_bool configs Punctuation in
+  let capitalize = Configs.get_bool configs Capitalize in
   let letters = Letters.init_n_as_letters ~words ~n ~punctuation ~capitalize in
   let mistakes = Mistakes.create () in
   Typing { letters; current_row = 0; mistakes; start_time = None }
@@ -111,7 +40,7 @@ let create () =
   let words = Words.create ~file_name:"data/words_alpha.txt" ~min:8 ~max:15 in
   (* let memo = Lazy_table.create () in *)
   let current_state = Menu in
-  let configs = create_default_configs () in
+  let configs = Configs.create () in
   { current_state; lexicon = { words (* ; memo *) }; configs }
 
 let mistake_if_happened letters mistakes input =
@@ -138,33 +67,7 @@ let mistake_if_happened letters mistakes input =
   in
   aux (Letters.to_list letters)
 
-let insert_value cfg c =
-  let is_num = function
-    | '0' .. '9' -> true
-    | _ -> false
-  in
-  let is_space = function
-    | ' ' -> true
-    | _ -> false
-  in
-  match cfg with
-  | { selected = false; _ } as cfg' -> cfg'
-  | { value = Int (Finite x); _ } as cfg' when is_num c ->
-      let new_int = x ^ String.make 1 c in
-      if Int.of_string new_int > 1000 then
-        { cfg' with value = Int (Finite "1000") }
-      else { cfg' with value = Int (Finite new_int) }
-  | { value = Int Infinite; _ } as cfg' when Char.( = ) c '0' -> cfg'
-  | { value = Int Infinite; _ } as cfg' when is_num c ->
-      let value = Int (Finite (String.make 1 c)) in
-      { cfg' with value }
-  | { value = Int _; _ } as cfg' -> cfg'
-  | { value = Bool b; _ } as cfg' when is_space c ->
-      { cfg' with value = Bool (not b) }
-  | { value = Bool _; _ } as cfg' -> cfg'
-
-let handle_menu_input_char { configs; _ } c =
-  List.map configs ~f:(fun cfg -> insert_value cfg c)
+let handle_menu_input_char { configs; _ } c = Configs.insert_value configs c
 
 let handle_input_char window input : t =
   let update_state state = { window with current_state = state } in
@@ -208,16 +111,7 @@ let handle_input_char window input : t =
                } ) )
   | Summary _ -> window
 
-let delete_value = function
-  | { selected = false; _ } as cfg' -> cfg'
-  | { value = Int (Finite x); _ } as cfg' when String.length x = 1 ->
-      { cfg' with value = Int Infinite }
-  | { value = Int (Finite x); _ } as cfg' ->
-      { cfg' with value = Int (Finite (String.drop_suffix x 1)) }
-  | { value = Int Infinite; _ } as cfg' -> cfg'
-  | { value = Bool _; _ } as cfg' -> cfg'
-
-let handle_backspace_menu configs = List.map configs ~f:delete_value
+let handle_backspace_menu configs = Configs.delete_value configs
 
 let handle_backspace window =
   match window.current_state with
@@ -227,20 +121,9 @@ let handle_backspace window =
       { window with current_state = Typing { typing with letters } }
   | Summary _ -> window
 
-let select_next_config configs =
-  let selections (c : config) = c.selected in
-  let shift lst =
-    match List.rev lst with
-    | ([] | [ _ ]) as r -> r
-    | hd :: tl -> tl @ [ hd ] |> List.rev
-  in
-  List.map ~f:selections configs
-  |> shift
-  |> List.map2_exn ~f:(fun cfg sel -> { cfg with selected = sel }) configs
-
 let handle_tab window =
   match window.current_state with
-  | Menu -> { window with configs = select_next_config window.configs }
+  | Menu -> { window with configs = Configs.select_next window.configs }
   | Typing _ -> window
   | Summary summary ->
       {

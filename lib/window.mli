@@ -1,25 +1,3 @@
-type int_type =
-  | Finite of string
-  | Infinite
-
-type config_value =
-  | Int of int_type
-  | Bool of bool
-
-type config_type =
-  | WordsNumber
-  | Punctuation
-  | Capitalize
-  | Adaptive
-
-type config = {
-  ctype : config_type;
-  value : config_value;
-  selected : bool;
-}
-
-type configs = config list
-
 type typing = {
   letters : Letters.t;
   current_row : int;
@@ -45,11 +23,9 @@ type lexicon
 type t = {
   current_state : state;
   lexicon : lexicon;
-  configs : configs;
+  configs : Configs.t;
 }
 
-val config_type_to_string : config_type -> string
-val config_value_to_string : config_value -> string
 val create_typing : t -> state
 val create : unit -> t
 val handle_input_char : t -> char -> t
