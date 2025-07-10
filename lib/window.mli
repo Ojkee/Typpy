@@ -3,11 +3,13 @@ type typing = {
   current_row : int;
   mistakes : Mistakes.t;
   start_time : float option;
+  inputs_count : int;
 }
 
 type summary = {
   mistakes : Mistakes.t;
-  num_letters : int;
+  correct_count : int;
+  inputs_count : int;
   execution_time : float;
   mistake_start : int;
   mistake_n : int;

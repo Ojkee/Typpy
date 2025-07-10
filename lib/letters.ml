@@ -169,6 +169,12 @@ let delete_last_current (letters : t) : t =
   in
   aux [] false (List.rev letters)
 
+let correct_count letters =
+  List.count letters ~f:(fun { status; _ } ->
+      match status with
+      | Correct -> true
+      | _ -> false )
+
 let rec finished (letters : t) : bool =
   match letters with
   | [] -> true

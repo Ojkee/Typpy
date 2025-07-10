@@ -61,19 +61,24 @@ let render_mistakes_table mistakes =
 
 let info_table infos len = List.map infos ~f:(fun info -> pad info len)
 
-let make_time_info execution_time num_letters len =
-  let wpm =
-    if Float.compare execution_time 0. <> 0 then
-      Printf.sprintf "wpm: %.2f"
-        (Int.to_float num_letters /. 5. *. (60. /. execution_time))
-    else "0.00"
+let make_time_info { Window.correct_count; inputs_count; execution_time; _ } len
+    =
+  let wpm_formula count = Int.to_float count /. 5. *. (60. /. execution_time) in
+  let wpm_str x =
+    if Float.( = ) execution_time 0. then "0.00"
+    else Printf.sprintf "%.2f" (wpm_formula x)
   in
+  let wpm = "wpm: " ^ wpm_str correct_count in
+  let raw_wpm = "raw: " ^ wpm_str inputs_count in
+  let wpm_info = wpm ^ "   " ^ raw_wpm in
   let time = Printf.sprintf "time: %.2fs" execution_time in
   let pad_len = 1 in
-  let gap_len = len - String.length wpm - String.length time - (2 * pad_len) in
+  let gap_len =
+    len - String.length wpm_info - String.length time - (2 * pad_len)
+  in
   [
     String.make pad_len ' ';
-    wpm;
+    wpm_info;
     String.make gap_len ' ';
     time;
     String.make pad_len ' ';
@@ -99,13 +104,13 @@ let render_configs configs ~max_width =
 
 let render_typing window ~max_width = window |> letters_to_image ~max_width
 
-let render_summary_image
-    { Window.mistakes; num_letters; execution_time; mistake_start; mistake_n } =
+let render_summary_image summary =
+  let { Window.mistakes; mistake_start; mistake_n; _ } = summary in
   let start = Int.rem mistake_start (Mistakes.length mistakes) in
   let mistakes = Mistakes.common_counter_n mistakes ~start ~n:mistake_n in
   let table = render_mistakes_table mistakes in
   let len = table |> List.hd |> Option.value ~default:"" |> String.length in
-  let time_info = [ make_time_info execution_time num_letters len ] in
+  let time_info = [ make_time_info summary len ] in
   let info = info_table [ " "; "'enter' to restart"; "'esc' to exit" ] len in
   let of_string = Letters.of_string ~status:SummaryTable in
   List.map (time_info @ table @ info) ~f:of_string |> letter_rows_to_img

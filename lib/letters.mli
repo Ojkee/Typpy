@@ -45,6 +45,7 @@ val next_space : t -> int
 val to_rows : t -> max_width:int -> t list
 val update : t -> char -> t
 val delete_last_current : t -> t
+val correct_count : t -> int
 val finished : t -> bool
 val exists : t -> f:(letter -> bool) -> bool
 val current_row_idx : t list -> int
