@@ -7,8 +7,8 @@ type typing = {
 }
 
 type summary = {
+  letters : Letters.t;
   mistakes : Mistakes.t;
-  correct_count : int;
   inputs_count : int;
   execution_time : float;
   mistake_start : int;

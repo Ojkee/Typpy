@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="imgs/typing-mode.png" width="600"/>
+  <img src="imgs/preview.png" width="700"/>
 </p>
 
 # Typpy
@@ -17,7 +17,7 @@ error tracking, and WPM stats — built in OCaml using Notty.
 - Designed for minimal distraction and fast feedback
 
 <p align="center">
-  <img src="imgs/summary-mode.png" width="600"/>
+  <img src="imgs/summary-mode.png" width="700"/>
 </p>
 
 # Installation (Linux)
@@ -42,8 +42,8 @@ Dataset contains 370k unfiltered english words.
 - [x] Propper navigation between window states
 - [x] Punctuation and capitalize modes
 - [x] Propper wpm calculator (+raw wpm)
+- [x] Word counter
 - [ ] Infinity mode 
-- [ ] Word counter
 - [ ] Adaptive word randomizer on infinity mode
 - [ ] Save progression
 - [ ] Generating words with common letter mistakes

@@ -41,6 +41,7 @@ val style_of_letter : letter -> style
 val init_n_as_letters :
   words:Words.t -> n:int -> punctuation:bool -> capitalize:bool -> t
 
+val init_from_list : string list -> t
 val next_space : t -> int
 val to_rows : t -> max_width:int -> t list
 val update : t -> char -> t
@@ -49,3 +50,4 @@ val correct_count : t -> int
 val finished : t -> bool
 val exists : t -> f:(letter -> bool) -> bool
 val current_row_idx : t list -> int
+val words_till_current : t -> int

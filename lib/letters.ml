@@ -107,12 +107,12 @@ let maybe_punctuate word ~chance =
     | (">" | "<" | "+" | "*" | "\\") as infix -> word ^ " " ^ infix
     | p -> word ^ p
 
+let to_letter_list lst =
+  lst |> String.concat ~sep:" " |> String.to_list
+  |> List.mapi ~f:(fun i c ->
+         { c; status = (if i = 0 then Current else Pending) } )
+
 let init_n_as_letters ~words ~n ~punctuation ~capitalize =
-  let to_letter_list lst =
-    lst |> String.concat ~sep:" " |> String.to_list
-    |> List.mapi ~f:(fun i c ->
-           { c; status = (if i = 0 then Current else Pending) } )
-  in
   let capitalize' word =
     if capitalize then maybe_capitalize word ~chance:0.2 else word
   in
@@ -121,6 +121,12 @@ let init_n_as_letters ~words ~n ~punctuation ~capitalize =
   in
   Lazy_table.random_n_words words n
   |> List.map ~f:capitalize' |> List.map ~f:punctuate' |> to_letter_list
+
+let init_from_list lst =
+  let capitalize' word = maybe_capitalize word ~chance:1. in
+  lst
+  |> List.mapi ~f:(fun i word -> if i = 0 then capitalize' word else word)
+  |> to_letter_list
 
 let next_space (letters : t) : int =
   let rec aux acc = function
@@ -196,3 +202,14 @@ let current_row_idx letter_rows =
         | _ -> false )
   in
   List.findi letter_rows ~f:has_current |> unwrap
+
+let words_till_current letters =
+  let rec aux acc = function
+    | { c = ' '; status = Current } :: _ -> acc + 1
+    | []
+    | { status = Current; _ } :: _ ->
+        acc
+    | { c; _ } :: tl when Char.( = ) c ' ' -> aux (acc + 1) tl
+    | _ :: tl -> aux acc tl
+  in
+  aux 0 letters

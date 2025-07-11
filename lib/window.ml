@@ -9,8 +9,8 @@ type typing = {
 }
 
 type summary = {
+  letters : Letters.t;
   mistakes : Mistakes.t;
-  correct_count : int;
   inputs_count : int;
   execution_time : float;
   mistake_start : int;
@@ -53,7 +53,6 @@ let handle_input_char window input : t =
   | Typing ({ letters; mistakes; start_time; inputs_count; _ } as typing) -> (
       let letters = Letters.update letters input in
       let mistakes = Mistakes.add_if_happened mistakes letters input in
-      let correct_count = Letters.correct_count letters in
       let inputs_count = inputs_count + 1 in
       match (Letters.finished letters, start_time) with
       | false, None ->
@@ -73,8 +72,8 @@ let handle_input_char window input : t =
           update_state
             (Summary
                {
+                 letters;
                  mistakes;
-                 correct_count;
                  inputs_count;
                  execution_time;
                  mistake_start = 0;
@@ -84,8 +83,8 @@ let handle_input_char window input : t =
           update_state
             (Summary
                {
+                 letters;
                  mistakes;
-                 correct_count;
                  inputs_count;
                  execution_time = 0.;
                  mistake_start = 0;

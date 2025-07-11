@@ -23,10 +23,6 @@ let crop_rows ?n_rows rows =
   let between i _ = s <= i && i < s + n in
   rows |> List.filteri ~f:between
 
-let letters_to_image { Window.letters; _ } ~(max_width : int) =
-  Letters.to_rows letters ~max_width
-  |> crop_rows ~n_rows:5 |> letter_rows_to_img
-
 let make_centered_image image width height =
   let w = I.width image in
   let h = I.height image in
@@ -61,13 +57,13 @@ let render_mistakes_table mistakes =
 
 let info_table infos len = List.map infos ~f:(fun info -> pad info len)
 
-let make_time_info { Window.correct_count; inputs_count; execution_time; _ } len
-    =
+let make_time_info { Window.letters; inputs_count; execution_time; _ } len =
   let wpm_formula count = Int.to_float count /. 5. *. (60. /. execution_time) in
   let wpm_str x =
     if Float.( = ) execution_time 0. then "0.00"
     else Printf.sprintf "%.2f" (wpm_formula x)
   in
+  let correct_count = Letters.correct_count letters in
   let wpm = "wpm: " ^ wpm_str correct_count in
   let raw_wpm = "raw: " ^ wpm_str inputs_count in
   let wpm_info = wpm ^ "   " ^ raw_wpm in
@@ -102,7 +98,14 @@ let render_configs configs ~max_width =
   Configs.to_letters configs ~max_width |> fun x ->
   x @ info |> letter_rows_to_img
 
-let render_typing window ~max_width = window |> letters_to_image ~max_width
+let render_typing letters ~num_words ~max_width =
+  let word_info =
+    Letters.words_till_current letters |> Int.to_string |> fun x ->
+    x ^ "/" ^ Int.to_string num_words |> fun x ->
+    String.make (max_width - String.length x) ' ' ^ x |> Letters.of_string
+  in
+  letters |> Letters.to_rows ~max_width |> crop_rows ~n_rows:5 |> fun x ->
+  x @ [ word_info ] |> letter_rows_to_img
 
 let render_summary_image summary =
   let { Window.mistakes; mistake_start; mistake_n; _ } = summary in
@@ -131,5 +134,6 @@ let frame window ~cols ~rows =
       render_configs window.configs ~max_width:(menu_width cols)
       |> draw_centered
   | Window.Typing typing ->
-      render_typing typing ~max_width:(typing_width cols) |> draw_centered
+      render_typing typing.letters ~num_words:3 ~max_width:(typing_width cols)
+      |> draw_centered
   | Window.Summary summary -> render_summary_image summary |> draw_centered
