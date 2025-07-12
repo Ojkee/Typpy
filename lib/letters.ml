@@ -244,3 +244,11 @@ let words_left letters =
     | _ :: tl -> aux acc tl
   in
   aux 0 letters - words_till_current letters
+
+let remove_words_before_n_current letters ~n =
+  let rec aux = function
+    | [] -> []
+    | { c = ' '; _ } :: tl as rest when words_till_current tl <= n -> rest
+    | _ :: tl -> aux tl
+  in
+  aux letters

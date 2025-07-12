@@ -42,7 +42,7 @@ let create_typing { lexicon = { words; _ }; configs; _ } =
   let letters =
     ( match n with
     | Configs.Finite x -> Int.of_string x
-    | Infinite -> 25 )
+    | Infinite -> 100 )
     |> fun n ->
     Letters.init_n_as_letters ~words ~n ~punctuation ~capitalize
     |> Letters.set_current_n ~n:0
@@ -94,11 +94,11 @@ let is_infinite configs =
 
 let update_letters letters window input_char =
   let letters = Letters.update letters input_char in
-  match (is_infinite window.configs, Letters.words_left letters < 20) with
+  match (is_infinite window.configs, Letters.words_left letters < 50) with
   | true, true ->
-      let new_words = Lazy_table.random_n_words window.lexicon.words 20 in
+      let new_words = Lazy_table.random_n_words window.lexicon.words 50 in
       let new_letters = Letters.init_from_list new_words in
-      Letters.append letters new_letters
+      letters |> Letters.append new_letters
   | _, _ -> letters
 
 let handle_input_char window input_char : t =

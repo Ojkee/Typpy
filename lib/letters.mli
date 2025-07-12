@@ -57,3 +57,4 @@ val is_current_f : t -> f:(letter -> bool) -> bool
 val is_next_f : t -> f:(letter -> bool) -> bool
 val is_space : letter -> bool
 val words_left : t -> int
+val remove_words_before_n_current : t -> n:int -> t
