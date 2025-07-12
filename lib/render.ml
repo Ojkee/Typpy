@@ -128,20 +128,21 @@ let typing_width cols = 4 * cols / 5
 let backgound cols rows =
   I.char A.(bg (rgb_888 ~r:51 ~g:51 ~b:51)) ' ' cols rows
 
-let frame window ~cols ~rows =
+let frame window =
+  let open Window in
   let draw_centered img =
-    let centered = make_centered_image img cols rows in
-    I.(centered </> backgound cols rows)
+    let centered = make_centered_image img window.cols window.rows in
+    I.(centered </> backgound window.cols window.rows)
   in
   match window.Window.current_state with
   | Window.Menu ->
-      render_configs window.configs ~max_width:(menu_width cols)
+      render_configs window.configs ~max_width:(menu_width window.cols)
       |> draw_centered
   | Window.Typing typing ->
       let num_words =
         Configs.(get_int_type window.configs WordsNumber)
         |> Result.ok_or_failwith
       in
-      render_typing typing ~num_words ~max_width:(typing_width cols)
+      render_typing typing ~num_words ~max_width:(typing_width window.cols)
       |> draw_centered
   | Window.Summary summary -> render_summary_image summary |> draw_centered

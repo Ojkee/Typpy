@@ -26,6 +26,8 @@ type state =
 type lexicon = { words : Words.t (* memo : Lazy_table.t; *) }
 
 type t = {
+  cols : int;
+  rows : int;
   current_state : state;
   lexicon : lexicon;
   configs : Configs.t;
@@ -58,12 +60,12 @@ let create_typing { lexicon = { words; _ }; configs; _ } =
       word_count = 0;
     }
 
-let create () =
+let create ~cols ~rows () =
   let words = Words.create ~file_name:"data/words_alpha.txt" ~min:8 ~max:15 in
   (* let memo = Lazy_table.create () in *)
   let current_state = Menu in
   let configs = Configs.create () in
-  { current_state; lexicon = { words (* ; memo *) }; configs }
+  { cols; rows; current_state; lexicon = { words (* ; memo *) }; configs }
 
 let to_summary ?et letters mistakes inputs_count =
   let execution_time = et |> Option.value ~default:0.0 in

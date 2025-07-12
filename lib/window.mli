@@ -24,13 +24,15 @@ type state =
 type lexicon
 
 type t = {
+  cols : int;
+  rows : int;
   current_state : state;
   lexicon : lexicon;
   configs : Configs.t;
 }
 
 val create_typing : t -> state
-val create : unit -> t
+val create : cols:int -> rows:int -> unit -> t
 val handle_input_char : t -> char -> t
 val handle_backspace : t -> t
 val handle_tab : t -> t

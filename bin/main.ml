@@ -6,7 +6,7 @@ let () =
 
   let rec loop window =
     let cols, rows = Term.size term in
-    let frame = Render.frame window ~rows ~cols in
+    let frame = Render.frame window in
     Term.image term frame;
     match Term.event term with
     | `Key (`Escape, _) -> (
@@ -21,6 +21,7 @@ let () =
     | _ -> loop window
   in
 
-  let window_state = Window.create () in
+  let cols, rows = Term.size term in
+  let window_state = Window.create ~cols ~rows () in
   loop window_state;
   Term.release term

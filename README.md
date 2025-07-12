@@ -17,7 +17,7 @@ error tracking, and WPM stats — built in OCaml using Notty.
 - Designed for minimal distraction and fast feedback
 
 <p align="center">
-  <img src="imgs/summary-mode.png" width="700"/>
+  <img src="imgs/summary.png" width="700"/>
 </p>
 
 # Installation (Linux)
