@@ -31,10 +31,19 @@ type t = {
 }
 
 let create_typing { lexicon = { words; _ }; configs; _ } =
-  let n = Configs.get_int configs WordsNumber in
-  let punctuation = Configs.get_bool configs Punctuation in
-  let capitalize = Configs.get_bool configs Capitalize in
-  let letters = Letters.init_n_as_letters ~words ~n ~punctuation ~capitalize in
+  let n = Configs.get_int_type configs WordsNumber |> Result.ok_or_failwith in
+  let punctuation =
+    Configs.get_bool configs Punctuation |> Result.ok_or_failwith
+  in
+  let capitalize =
+    Configs.get_bool configs Capitalize |> Result.ok_or_failwith
+  in
+  let letters =
+    ( match n with
+    | Configs.Finite x -> Int.of_string x
+    | Configs.Infinite -> failwith "TODO" )
+    |> fun n -> Letters.init_n_as_letters ~words ~n ~punctuation ~capitalize
+  in
   let mistakes = Mistakes.create () in
   Typing
     { letters; current_row = 0; mistakes; start_time = None; inputs_count = 0 }
@@ -46,6 +55,18 @@ let create () =
   let configs = Configs.create () in
   { current_state; lexicon = { words (* ; memo *) }; configs }
 
+let to_summary ?et letters mistakes inputs_count =
+  let execution_time = et |> Option.value ~default:0.0 in
+  Summary
+    {
+      letters;
+      mistakes;
+      inputs_count;
+      execution_time;
+      mistake_start = 0;
+      mistake_n = 5;
+    }
+
 let handle_input_char window input : t =
   let update_state state = { window with current_state = state } in
   match window.current_state with
@@ -54,42 +75,19 @@ let handle_input_char window input : t =
       let letters = Letters.update letters input in
       let mistakes = Mistakes.add_if_happened mistakes letters input in
       let inputs_count = inputs_count + 1 in
+      let update_typing ?start_time typing' =
+        Typing { typing' with letters; mistakes; inputs_count; start_time }
+      in
       match (Letters.finished letters, start_time) with
       | false, None ->
-          update_state
-            (Typing
-               {
-                 typing with
-                 letters;
-                 mistakes;
-                 start_time = Some (Unix.gettimeofday ());
-                 inputs_count;
-               } )
+          update_state (update_typing typing ~start_time:(Unix.gettimeofday ()))
       | false, _ ->
-          update_state (Typing { typing with letters; mistakes; inputs_count })
+          let start_time = typing.start_time |> Option.value ~default:0. in
+          update_state (update_typing typing ~start_time)
       | true, Some start ->
-          let execution_time = Unix.gettimeofday () -. start in
-          update_state
-            (Summary
-               {
-                 letters;
-                 mistakes;
-                 inputs_count;
-                 execution_time;
-                 mistake_start = 0;
-                 mistake_n = 5;
-               } )
-      | true, None ->
-          update_state
-            (Summary
-               {
-                 letters;
-                 mistakes;
-                 inputs_count;
-                 execution_time = 0.;
-                 mistake_start = 0;
-                 mistake_n = 5;
-               } ) )
+          let et = Unix.gettimeofday () -. start in
+          update_state (to_summary ~et letters mistakes inputs_count)
+      | true, None -> update_state (to_summary letters mistakes inputs_count) )
   | Summary _ -> window
 
 let handle_backspace window =

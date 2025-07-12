@@ -46,9 +46,9 @@ Dataset contains 370k unfiltered english words.
 - [ ] Infinity mode 
 - [ ] Adaptive word randomizer on infinity mode
 - [ ] Save progression
-- [ ] Generating words with common letter mistakes
 - [ ] Per-character timing for advanced stats
 - [ ] Implement arrow keys
+- [ ] Custom themes
 
 # Bugs
 - [x] Summary wraps incorectly at the end of big table

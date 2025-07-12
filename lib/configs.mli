@@ -1,3 +1,5 @@
+open Base
+
 type int_type =
   | Finite of string
   | Infinite
@@ -21,8 +23,8 @@ type config = {
 type t = config list
 
 val create : unit -> t
-val get_int : t -> config_type -> int
-val get_bool : t -> config_type -> bool
+val get_int_type : t -> config_type -> (int_type, string) Result.t
+val get_bool : t -> config_type -> (bool, string) Result.t
 val insert_value : t -> char -> t
 val delete_value : t -> t
 val select_next : t -> t

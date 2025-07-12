@@ -99,9 +99,13 @@ let render_configs configs ~max_width =
   x @ info |> letter_rows_to_img
 
 let render_typing letters ~num_words ~max_width =
+  let current_word_str = Letters.words_till_current letters |> Int.to_string in
   let word_info =
-    Letters.words_till_current letters |> Int.to_string |> fun x ->
-    x ^ "/" ^ Int.to_string num_words |> fun x ->
+    ( match num_words with
+    | Configs.Infinite -> "inf"
+    | Finite x -> x )
+    |> fun x ->
+    current_word_str ^ "/" ^ x |> fun x ->
     String.make (max_width - String.length x) ' ' ^ x |> Letters.of_string
   in
   letters |> Letters.to_rows ~max_width |> crop_rows ~n_rows:5 |> fun x ->
@@ -134,6 +138,10 @@ let frame window ~cols ~rows =
       render_configs window.configs ~max_width:(menu_width cols)
       |> draw_centered
   | Window.Typing typing ->
-      render_typing typing.letters ~num_words:3 ~max_width:(typing_width cols)
+      let num_words =
+        Configs.(get_int_type window.configs WordsNumber)
+        |> Result.ok_or_failwith
+      in
+      render_typing typing.letters ~num_words ~max_width:(typing_width cols)
       |> draw_centered
   | Window.Summary summary -> render_summary_image summary |> draw_centered

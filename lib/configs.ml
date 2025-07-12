@@ -53,23 +53,16 @@ let find_value configs cfg_type =
   |> Option.value_exn ~message:"Config not found"
   |> fun { value; _ } -> value
 
-let get_int configs cfgtype =
-  let num_words =
-    find_value configs cfgtype |> fun x ->
-    match x with
-    | Int x -> Some x
-    | _ -> None
-  in
-  match num_words with
-  | Some (Finite x) -> Int.of_string x
-  | Some Infinite -> 100
-  | None -> assert false
+let get_int_type configs cfgtype =
+  match find_value configs cfgtype with
+  | Int i -> Ok i
+  | _ -> Error "Invalid type"
 
 let get_bool configs cfgtype =
   find_value configs cfgtype |> fun x ->
   match x with
-  | Bool x -> x
-  | _ -> assert false
+  | Bool x -> Ok x
+  | _ -> Error "Invalid type"
 
 let insert_value_cfg cfg c =
   let is_num = function
