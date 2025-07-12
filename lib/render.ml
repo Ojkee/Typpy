@@ -98,7 +98,7 @@ let render_configs configs ~max_width =
   Configs.to_letters configs ~max_width |> fun x ->
   x @ info |> letter_rows_to_img
 
-let render_typing letters ~num_words ~max_width =
+let render_typing ({ letters; _ } : Window.typing) ~num_words ~max_width =
   let current_word_str = Letters.words_till_current letters |> Int.to_string in
   let word_info =
     ( match num_words with
@@ -142,6 +142,6 @@ let frame window ~cols ~rows =
         Configs.(get_int_type window.configs WordsNumber)
         |> Result.ok_or_failwith
       in
-      render_typing typing.letters ~num_words ~max_width:(typing_width cols)
+      render_typing typing ~num_words ~max_width:(typing_width cols)
       |> draw_centered
   | Window.Summary summary -> render_summary_image summary |> draw_centered

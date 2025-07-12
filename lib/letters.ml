@@ -213,3 +213,21 @@ let words_till_current letters =
     | _ :: tl -> aux acc tl
   in
   aux 0 letters
+
+let is_current_f letters ~f =
+  let rec aux = function
+    | [] -> false
+    | ({ status = Current; _ } as cur) :: _ -> f cur
+    | _ :: tl -> aux tl
+  in
+  aux letters
+
+let is_next_f letters ~f =
+  let rec aux = function
+    | [] -> false
+    | { status = Current; _ } :: next :: _ -> f next
+    | _ :: tl -> aux tl
+  in
+  aux letters
+
+let is_space { c; _ } = Char.( = ) c ' '

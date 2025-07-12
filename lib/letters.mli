@@ -51,3 +51,6 @@ val finished : t -> bool
 val exists : t -> f:(letter -> bool) -> bool
 val current_row_idx : t list -> int
 val words_till_current : t -> int
+val is_current_f : t -> f:(letter -> bool) -> bool
+val is_next_f : t -> f:(letter -> bool) -> bool
+val is_space : letter -> bool

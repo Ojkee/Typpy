@@ -4,6 +4,7 @@ type typing = {
   mistakes : Mistakes.t;
   start_time : float option;
   inputs_count : int;
+  word_count : int;
 }
 
 type summary = {
