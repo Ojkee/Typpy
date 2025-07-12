@@ -42,8 +42,10 @@ let create_typing { lexicon = { words; _ }; configs; _ } =
   let letters =
     ( match n with
     | Configs.Finite x -> Int.of_string x
-    | Infinite -> failwith "TODO" )
-    |> fun n -> Letters.init_n_as_letters ~words ~n ~punctuation ~capitalize
+    | Infinite -> 25 )
+    |> fun n ->
+    Letters.init_n_as_letters ~words ~n ~punctuation ~capitalize
+    |> Letters.set_current_n ~n:0
   in
   let mistakes = Mistakes.create () in
   Typing
@@ -85,16 +87,31 @@ let update_word_count_after_backspace letters word_count =
   | true -> word_count - 1
   | false -> word_count
 
-let handle_input_char window input : t =
+let is_infinite configs =
+  match Configs.(get_int_type configs WordsNumber) with
+  | Ok Infinite -> true
+  | _ -> false
+
+let update_letters letters window input_char =
+  let letters = Letters.update letters input_char in
+  match (is_infinite window.configs, Letters.words_left letters < 20) with
+  | true, true ->
+      let new_words = Lazy_table.random_n_words window.lexicon.words 20 in
+      let new_letters = Letters.init_from_list new_words in
+      Letters.append letters new_letters
+  | _, _ -> letters
+
+let handle_input_char window input_char : t =
   let update_state state = { window with current_state = state } in
   match window.current_state with
-  | Menu -> { window with configs = Configs.insert_value window.configs input }
+  | Menu ->
+      { window with configs = Configs.insert_value window.configs input_char }
   | Typing
       ({ letters; mistakes; start_time; inputs_count; word_count; _ } as typing)
     -> (
-      let letters = Letters.update letters input in
+      let letters = update_letters letters window input_char in
       let word_count = update_word_count_after_input letters word_count in
-      let mistakes = Mistakes.add_if_happened mistakes letters input in
+      let mistakes = Mistakes.add_if_happened mistakes letters input_char in
       let inputs_count = inputs_count + 1 in
       let update_typing ?start_time typing' =
         Typing

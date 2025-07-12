@@ -30,6 +30,7 @@ type style = {
 let bg_color : color = { r = 51; g = 51; b = 51 }
 let fg_color : color = { r = 255; g = 248; b = 231 }
 let create () = []
+let append lhs rhs = List.append lhs rhs
 let rev (letters : t) : t = List.rev letters
 let lenght (letters : t) : int = List.length letters
 let of_list (x : letter list) : t = x
@@ -109,8 +110,7 @@ let maybe_punctuate word ~chance =
 
 let to_letter_list lst =
   lst |> String.concat ~sep:" " |> String.to_list
-  |> List.mapi ~f:(fun i c ->
-         { c; status = (if i = 0 then Current else Pending) } )
+  |> List.map ~f:(fun c -> { c; status = Pending })
 
 let init_n_as_letters ~words ~n ~punctuation ~capitalize =
   let capitalize' word =
@@ -121,6 +121,11 @@ let init_n_as_letters ~words ~n ~punctuation ~capitalize =
   in
   Lazy_table.random_n_words words n
   |> List.map ~f:capitalize' |> List.map ~f:punctuate' |> to_letter_list
+
+let set_current_n letters ~n =
+  letters
+  |> List.mapi ~f:(fun i ({ status; _ } as letter) ->
+         { letter with status = (if i = n then Current else status) } )
 
 let init_from_list lst =
   let capitalize' word = maybe_capitalize word ~chance:1. in
@@ -231,3 +236,11 @@ let is_next_f letters ~f =
   aux letters
 
 let is_space { c; _ } = Char.( = ) c ' '
+
+let words_left letters =
+  let rec aux acc = function
+    | [] -> acc + 1
+    | { c = ' '; _ } :: tl -> aux (acc + 1) tl
+    | _ :: tl -> aux acc tl
+  in
+  aux 0 letters - words_till_current letters

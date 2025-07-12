@@ -30,6 +30,7 @@ type style = {
 val bg_color : color
 val fg_color : color
 val create : unit -> t
+val append : t -> t -> t
 val rev : t -> t
 val lenght : t -> int
 val of_list : letter list -> t
@@ -41,6 +42,7 @@ val style_of_letter : letter -> style
 val init_n_as_letters :
   words:Words.t -> n:int -> punctuation:bool -> capitalize:bool -> t
 
+val set_current_n : t -> n:int -> t
 val init_from_list : string list -> t
 val next_space : t -> int
 val to_rows : t -> max_width:int -> t list
@@ -54,3 +56,4 @@ val words_till_current : t -> int
 val is_current_f : t -> f:(letter -> bool) -> bool
 val is_next_f : t -> f:(letter -> bool) -> bool
 val is_space : letter -> bool
+val words_left : t -> int

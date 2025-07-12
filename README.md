@@ -43,6 +43,7 @@ Dataset contains 370k unfiltered english words.
 - [x] Punctuation and capitalize modes
 - [x] Propper wpm calculator (+raw wpm)
 - [x] Word counter
+- [x] Resize window 
 - [ ] Infinity mode 
 - [ ] Adaptive word randomizer on infinity mode
 - [ ] Save progression

@@ -3,14 +3,9 @@ open Lib
 
 let () =
   let term = Term.create () in
-  let cols, rows = Term.size term in
-  let rec has_ctrl = function
-    | [] -> false
-    | `Ctrl :: _ -> true
-    | _ :: tl -> has_ctrl tl
-  in
 
   let rec loop window =
+    let cols, rows = Term.size term in
     let frame = Render.frame window ~rows ~cols in
     Term.image term frame;
     match Term.event term with
@@ -22,6 +17,7 @@ let () =
     | `Key (`Enter, _) -> loop (Window.handle_enter window)
     | `Key (`ASCII c, _) -> loop (Window.handle_input_char window c)
     | `Key (`Backspace, _) -> loop (Window.handle_backspace window)
+    | `Resize _ -> loop window
     | _ -> loop window
   in
 
