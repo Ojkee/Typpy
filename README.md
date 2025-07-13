@@ -54,3 +54,4 @@ Dataset contains 370k unfiltered english words.
 
 # Bugs
 - [x] Summary wraps incorectly at the end of big table
+- [x] Infinity mode breaks after certain number of words

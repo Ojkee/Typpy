@@ -2,7 +2,6 @@ open Base
 
 type typing = {
   letters : Letters.t;
-  current_row : int;
   mistakes : Mistakes.t;
   start_time : float option;
   inputs_count : int;
@@ -51,14 +50,7 @@ let create_typing { lexicon = { words; _ }; configs; _ } =
   in
   let mistakes = Mistakes.create () in
   Typing
-    {
-      letters;
-      current_row = 0;
-      mistakes;
-      start_time = None;
-      inputs_count = 0;
-      word_count = 0;
-    }
+    { letters; mistakes; start_time = None; inputs_count = 0; word_count = 0 }
 
 let create ~cols ~rows () =
   let words = Words.create ~file_name:"data/words_alpha.txt" ~min:8 ~max:15 in
@@ -99,8 +91,10 @@ let update_letters letters window input_char =
   match (is_infinite window.configs, Letters.words_left letters < 50) with
   | true, true ->
       let new_words = Lazy_table.random_n_words window.lexicon.words 50 in
-      let new_letters = Letters.init_from_list new_words in
-      letters |> Letters.append new_letters
+      let new_letters =
+        new_words |> String.concat ~sep:" " |> Letters.of_string ~status:Pending
+      in
+      Letters.append letters new_letters
   | _, _ -> letters
 
 let handle_input_char window input_char : t =
@@ -115,23 +109,15 @@ let handle_input_char window input_char : t =
       let word_count = update_word_count_after_input letters word_count in
       let mistakes = Mistakes.add_if_happened mistakes letters input_char in
       let inputs_count = inputs_count + 1 in
-      let update_typing ?start_time typing' =
-        Typing
-          {
-            typing' with
-            letters;
-            mistakes;
-            inputs_count;
-            start_time;
-            word_count;
-          }
+      let update_typing ?start_time () =
+        Typing { letters; mistakes; inputs_count; start_time; word_count }
       in
       match (Letters.finished letters, start_time) with
       | false, None ->
-          update_state (update_typing typing ~start_time:(Unix.gettimeofday ()))
+          update_state (update_typing ~start_time:(Unix.gettimeofday ()) ())
       | false, _ ->
           let start_time = typing.start_time |> Option.value ~default:0. in
-          update_state (update_typing typing ~start_time)
+          update_state (update_typing ~start_time ())
       | true, Some start ->
           let et = Unix.gettimeofday () -. start in
           update_state (to_summary ~et letters mistakes inputs_count)
