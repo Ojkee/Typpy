@@ -51,15 +51,15 @@ let letters_n configs =
   | Configs.Finite x -> Int.of_string x
   | Infinite -> 100
 
-let generate_new_words words configs =
+let generate_new_letters words configs =
   Words.random_n words ~n:(letters_n configs)
   |> Words.punctuate ~chance:(punctuation_chance configs)
   |> Words.capitalize ~chance:(capitalize_chance configs)
+  |> Letters.of_words ~status:Pending
 
 let create_typing { lexicon = { words; _ }; configs; _ } =
   let letters =
-    generate_new_words words configs
-    |> Letters.of_words |> Letters.set_current_n ~n:0
+    generate_new_letters words configs |> Letters.set_current_n ~n:0
   in
   let mistakes = Mistakes.create () in
   Typing
@@ -103,9 +103,7 @@ let update_letters t letters input_char =
   let letters = Letters.update letters input_char in
   match (is_infinite t.configs, Letters.words_left letters < 50) with
   | true, true ->
-      let new_letters =
-        generate_new_words t.lexicon.words t.configs |> Letters.of_words
-      in
+      let new_letters = generate_new_letters t.lexicon.words t.configs in
       Letters.append letters new_letters
   | _, _ -> letters
 
