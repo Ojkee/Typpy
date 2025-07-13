@@ -43,11 +43,3 @@ let rec random_n_from_ngram (table : t) (words : Words.t) (ngram : string)
       let rand_n = take_random_n n (List.length lst) in
       let find_idx i _ = List.mem i rand_n in
       lst |> List.filteri find_idx
-
-let random_n_words (words : Words.t) (n : int) : string list =
-  let rand_n = take_random_n n (Words.length words) in
-  let rec aux acc = function
-    | [] -> acc
-    | hd :: tl -> aux (Words.get words hd :: acc) tl
-  in
-  aux [] rand_n

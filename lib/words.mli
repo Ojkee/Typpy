@@ -1,6 +1,10 @@
 type t
 
+val to_list : t -> string list
+val of_list : string list -> t
 val create : file_name:string -> min:int -> max:int -> t
 val length : t -> int
 val get : t -> int -> string
-val to_list : t -> string list
+val punctuate : t -> chance:float -> t
+val capitalize : t -> chance:float -> t
+val random_n : t -> n:int -> t

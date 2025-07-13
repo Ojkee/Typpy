@@ -31,13 +31,16 @@ let bg_color : color = { r = 51; g = 51; b = 51 }
 let fg_color : color = { r = 255; g = 248; b = 231 }
 let create () = []
 let append lhs rhs = List.append lhs rhs
-let rev (letters : t) : t = List.rev letters
-let lenght (letters : t) : int = List.length letters
-let of_list (x : letter list) : t = x
-let to_list (x : t) : letter list = x
+let rev t = List.rev t
+let lenght t = List.length t
+let of_list x = x
+let to_list x = x
 
 let of_string ?(status = Text) text =
   text |> String.to_list |> List.map ~f:(fun c -> { c; status })
+
+let of_words ?(status = Text) words =
+  Words.to_list words |> String.concat ~sep:" " |> of_string ~status
 
 let status_style = function
   | Current -> { fg = bg_color; bg = { r = 255; g = 248; b = 231 } }
@@ -49,100 +52,28 @@ let status_style = function
   | Mistake -> { fg = { r = 180; g = 100; b = 255 }; bg = bg_color }
   | Text -> { fg = { r = 153; g = 150; b = 141 }; bg = bg_color }
 
-let style_of_letter ({ c = _; status } : letter) : style = status_style status
+let style_of_letter { c = _; status } = status_style status
 
-let is_rand_above_threshold ~chance =
-  assert (Float.( <= ) 0. chance && Float.( <= ) chance 1.);
-  Random.self_init ();
-  let r = Random.float 1. in
-  Float.( >= ) r chance
-
-let maybe_capitalize word ~chance =
-  if is_rand_above_threshold ~chance then word else String.capitalize word
-
-let get_random_punctuation () =
-  let p =
-    [|
-      "!";
-      "\"";
-      "#";
-      "$";
-      "%";
-      "&";
-      "'";
-      "*";
-      "+";
-      ",";
-      "-";
-      ".";
-      "/";
-      ":";
-      ";";
-      "<";
-      "=";
-      ">";
-      "?";
-      "[";
-      "\\";
-      "^";
-      "_";
-      "`";
-      "{";
-      "|";
-      "~";
-    |]
-  in
-  Random.self_init ();
-  let r = Random.int (Array.length p) in
-  p.(r)
-
-let maybe_punctuate word ~chance =
-  if is_rand_above_threshold ~chance then word
-  else
-    match get_random_punctuation () with
-    | ("\'" | "\"") as q -> q ^ word ^ q
-    | "(" -> "(" ^ word ^ ")"
-    | "{" -> "{" ^ word ^ "}"
-    | "[" -> "[" ^ word ^ "]"
-    | ("`" | "~" | "#") as prefix -> prefix ^ word
-    | (">" | "<" | "+" | "*" | "\\") as infix -> word ^ " " ^ infix
-    | p -> word ^ p
-
-let to_letter_list lst =
+let of_string_list lst =
   lst |> String.concat ~sep:" " |> String.to_list
   |> List.map ~f:(fun c -> { c; status = Pending })
 
-let init_n_as_letters ~words ~n ~punctuation ~capitalize =
-  let capitalize' word =
-    if capitalize then maybe_capitalize word ~chance:0.2 else word
-  in
-  let punctuate' word =
-    if punctuation then maybe_punctuate word ~chance:0.2 else word
-  in
-  Lazy_table.random_n_words words n
-  |> List.map ~f:capitalize' |> List.map ~f:punctuate' |> to_letter_list
+let set_current_n t ~n =
+  List.mapi t ~f:(fun i letter ->
+      match i = n with
+      | true -> { letter with status = Current }
+      | false -> letter )
 
-let set_current_n letters ~n =
-  letters
-  |> List.mapi ~f:(fun i ({ status; _ } as letter) ->
-         { letter with status = (if i = n then Current else status) } )
-
-let init_from_list lst =
-  let capitalize' word = maybe_capitalize word ~chance:1. in
-  lst
-  |> List.mapi ~f:(fun i word -> if i = 0 then capitalize' word else word)
-  |> to_letter_list
-
-let next_space (letters : t) : int =
+let next_space t =
   let rec aux acc = function
     | { c = ' '; _ } :: _
     | [] ->
         acc
     | _ :: tl -> aux (acc + 1) tl
   in
-  aux 1 letters
+  aux 1 t
 
-let to_rows (letters : t) ~(max_width : int) : t list =
+let to_rows t ~max_width =
   let rec aux current_row rows = function
     | [] -> List.rev (current_row :: rows)
     | lst ->
@@ -152,9 +83,9 @@ let to_rows (letters : t) ~(max_width : int) : t list =
           aux (current_row @ word) rows rest
         else aux word (current_row :: rows) rest
   in
-  aux [] [] letters
+  aux [] [] t
 
-let update (letters : t) (pressed : char) : t =
+let update t pressed =
   let get_status target got =
     if Char.compare target got = 0 then Correct else Mistake
   in
@@ -166,9 +97,9 @@ let update (letters : t) (pressed : char) : t =
         aux ({ c; status = Current } :: acc) false tl
     | hd :: tl -> aux (hd :: acc) false tl
   in
-  aux [] false letters
+  aux [] false t
 
-let delete_last_current (letters : t) : t =
+let delete_last_current t =
   let rec aux acc last_curr = function
     | [] -> acc
     | [ ({ c = _; status = Current } as current) ] -> current :: acc
@@ -178,21 +109,21 @@ let delete_last_current (letters : t) : t =
         aux ({ c; status = Current } :: acc) false tl
     | hd :: tl -> aux (hd :: acc) false tl
   in
-  aux [] false (List.rev letters)
+  aux [] false (List.rev t)
 
-let correct_count letters =
-  List.count letters ~f:(fun { status; _ } ->
+let correct_count t =
+  List.count t ~f:(fun { status; _ } ->
       match status with
       | Correct -> true
       | _ -> false )
 
-let rec finished (letters : t) : bool =
-  match letters with
+let rec finished t =
+  match t with
   | [] -> true
   | { c = _; status = Current } :: _ -> false
   | _ :: tl -> finished tl
 
-let exists letters ~f : bool = List.exists letters ~f
+let exists t ~f = List.exists t ~f
 
 let current_row_idx letter_rows =
   let unwrap x =
@@ -208,7 +139,7 @@ let current_row_idx letter_rows =
   in
   List.findi letter_rows ~f:has_current |> unwrap
 
-let words_till_current letters =
+let words_till_current t =
   let rec aux acc = function
     | { c = ' '; status = Current } :: _ -> acc + 1
     | []
@@ -217,38 +148,38 @@ let words_till_current letters =
     | { c; _ } :: tl when Char.( = ) c ' ' -> aux (acc + 1) tl
     | _ :: tl -> aux acc tl
   in
-  aux 0 letters
+  aux 0 t
 
-let is_current_f letters ~f =
+let is_current_f t ~f =
   let rec aux = function
     | [] -> false
     | ({ status = Current; _ } as cur) :: _ -> f cur
     | _ :: tl -> aux tl
   in
-  aux letters
+  aux t
 
-let is_next_f letters ~f =
+let is_next_f t ~f =
   let rec aux = function
     | [] -> false
     | { status = Current; _ } :: next :: _ -> f next
     | _ :: tl -> aux tl
   in
-  aux letters
+  aux t
 
 let is_space { c; _ } = Char.( = ) c ' '
 
-let words_left letters =
+let words_left t =
   let rec aux acc = function
     | [] -> acc + 1
     | { c = ' '; _ } :: tl -> aux (acc + 1) tl
     | _ :: tl -> aux acc tl
   in
-  aux 0 letters - words_till_current letters
+  aux 0 t - words_till_current t
 
-let remove_words_before_n_current letters ~n =
+let remove_words_before_n_current t ~n =
   let rec aux = function
     | [] -> []
     | { c = ' '; _ } :: tl as rest when words_till_current tl <= n -> rest
     | _ :: tl -> aux tl
   in
-  aux letters
+  aux t

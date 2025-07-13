@@ -32,21 +32,34 @@ type t = {
   configs : Configs.t;
 }
 
+let punctuation_chance configs =
+  Configs.get_bool configs Punctuation |> Result.ok_or_failwith |> fun p ->
+  match p with
+  | true -> 0.2
+  | false -> 0.0
+
+let capitalize_chance configs =
+  Configs.get_bool configs Capitalize |> Result.ok_or_failwith |> fun c ->
+  match c with
+  | true -> 0.2
+  | false -> 0.0
+
+let letters_n configs =
+  Configs.get_int_type configs WordsNumber |> Result.ok_or_failwith
+  |> fun int_type ->
+  match int_type with
+  | Configs.Finite x -> Int.of_string x
+  | Infinite -> 100
+
+let generate_new_words words configs =
+  Words.random_n words ~n:(letters_n configs)
+  |> Words.punctuate ~chance:(punctuation_chance configs)
+  |> Words.capitalize ~chance:(capitalize_chance configs)
+
 let create_typing { lexicon = { words; _ }; configs; _ } =
-  let n = Configs.get_int_type configs WordsNumber |> Result.ok_or_failwith in
-  let punctuation =
-    Configs.get_bool configs Punctuation |> Result.ok_or_failwith
-  in
-  let capitalize =
-    Configs.get_bool configs Capitalize |> Result.ok_or_failwith
-  in
   let letters =
-    ( match n with
-    | Configs.Finite x -> Int.of_string x
-    | Infinite -> 100 )
-    |> fun n ->
-    Letters.init_n_as_letters ~words ~n ~punctuation ~capitalize
-    |> Letters.set_current_n ~n:0
+    generate_new_words words configs
+    |> Letters.of_words |> Letters.set_current_n ~n:0
   in
   let mistakes = Mistakes.create () in
   Typing
@@ -86,26 +99,24 @@ let is_infinite configs =
   | Ok Infinite -> true
   | _ -> false
 
-let update_letters letters window input_char =
+let update_letters t letters input_char =
   let letters = Letters.update letters input_char in
-  match (is_infinite window.configs, Letters.words_left letters < 50) with
+  match (is_infinite t.configs, Letters.words_left letters < 50) with
   | true, true ->
-      let new_words = Lazy_table.random_n_words window.lexicon.words 50 in
       let new_letters =
-        new_words |> String.concat ~sep:" " |> Letters.of_string ~status:Pending
+        generate_new_words t.lexicon.words t.configs |> Letters.of_words
       in
       Letters.append letters new_letters
   | _, _ -> letters
 
-let handle_input_char window input_char : t =
-  let update_state state = { window with current_state = state } in
-  match window.current_state with
-  | Menu ->
-      { window with configs = Configs.insert_value window.configs input_char }
+let handle_input_char t input_char : t =
+  let update_state state = { t with current_state = state } in
+  match t.current_state with
+  | Menu -> { t with configs = Configs.insert_value t.configs input_char }
   | Typing
       ({ letters; mistakes; start_time; inputs_count; word_count; _ } as typing)
     -> (
-      let letters = update_letters letters window input_char in
+      let letters = update_letters t letters input_char in
       let word_count = update_word_count_after_input letters word_count in
       let mistakes = Mistakes.add_if_happened mistakes letters input_char in
       let inputs_count = inputs_count + 1 in
@@ -122,37 +133,37 @@ let handle_input_char window input_char : t =
           let et = Unix.gettimeofday () -. start in
           update_state (to_summary ~et letters mistakes inputs_count)
       | true, None -> update_state (to_summary letters mistakes inputs_count) )
-  | Summary _ -> window
+  | Summary _ -> t
 
-let handle_backspace window =
-  match window.current_state with
-  | Menu -> { window with configs = Configs.delete_value window.configs }
+let handle_backspace t =
+  match t.current_state with
+  | Menu -> { t with configs = Configs.delete_value t.configs }
   | Typing ({ letters; inputs_count; word_count; _ } as typing) ->
       let letters = Letters.delete_last_current letters in
       let word_count = update_word_count_after_backspace letters word_count in
       let inputs_count = inputs_count + 1 in
       {
-        window with
+        t with
         current_state = Typing { typing with letters; inputs_count; word_count };
       }
-  | Summary _ -> window
+  | Summary _ -> t
 
-let handle_tab window =
-  match window.current_state with
-  | Menu -> { window with configs = Configs.select_next window.configs }
-  | Typing _ -> window
+let handle_tab t =
+  match t.current_state with
+  | Menu -> { t with configs = Configs.select_next t.configs }
+  | Typing _ -> t
   | Summary summary ->
       let mistake_start = summary.mistake_start + 1 in
-      { window with current_state = Summary { summary with mistake_start } }
+      { t with current_state = Summary { summary with mistake_start } }
 
-let handle_enter window =
-  match window.current_state with
-  | Menu -> { window with current_state = create_typing window }
-  | Typing _ -> window
-  | Summary _ -> { window with current_state = create_typing window }
+let handle_enter t =
+  match t.current_state with
+  | Menu -> { t with current_state = create_typing t }
+  | Typing _ -> t
+  | Summary _ -> { t with current_state = create_typing t }
 
-let handle_esc window =
-  match window.current_state with
+let handle_esc t =
+  match t.current_state with
   | Menu -> None
-  | Typing _ -> Some { window with current_state = Menu }
-  | Summary _ -> Some { window with current_state = Menu }
+  | Typing _ -> Some { t with current_state = Menu }
+  | Summary _ -> Some { t with current_state = Menu }

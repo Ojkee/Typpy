@@ -36,14 +36,11 @@ val lenght : t -> int
 val of_list : letter list -> t
 val to_list : t -> letter list
 val of_string : ?status:letter_status -> string -> t
+val of_words : ?status:letter_status -> Words.t -> t
 val status_style : letter_status -> style
 val style_of_letter : letter -> style
-
-val init_n_as_letters :
-  words:Words.t -> n:int -> punctuation:bool -> capitalize:bool -> t
-
+val of_string_list : string list -> t
 val set_current_n : t -> n:int -> t
-val init_from_list : string list -> t
 val next_space : t -> int
 val to_rows : t -> max_width:int -> t list
 val update : t -> char -> t
