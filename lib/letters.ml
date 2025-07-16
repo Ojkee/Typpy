@@ -183,3 +183,5 @@ let remove_words_before_n_current t ~n =
     | _ :: tl -> aux tl
   in
   aux t
+
+let set_status t ~status = List.map t ~f:(fun { c; _ } -> { c; status })

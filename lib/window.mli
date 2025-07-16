@@ -20,13 +20,11 @@ type state =
   | Typing of typing
   | Summary of summary
 
-type lexicon
-
 type t = {
   cols : int;
   rows : int;
   current_state : state;
-  lexicon : lexicon;
+  lexicon : Lexicon.t;
   configs : Configs.t;
 }
 

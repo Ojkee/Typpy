@@ -27,14 +27,14 @@ let create () =
     { ctype = WordsNumber; value = Int (Finite "5"); selected = true };
     { ctype = Punctuation; value = Bool false; selected = false };
     { ctype = Capitalize; value = Bool false; selected = false };
-    { ctype = Adaptive; value = Bool false; selected = false };
+    { ctype = Adaptive; value = Bool true; selected = false };
   ]
 
 let config_type_to_string = function
   | WordsNumber -> "number of words"
   | Punctuation -> "punctuation"
   | Capitalize -> "capitalize"
-  | Adaptive -> "adaptive"
+  | Adaptive -> "adaptive (inf mode)"
 
 let config_value_to_string = function
   | Int (Finite x) -> x
@@ -46,6 +46,7 @@ let same_type ctype cfg_type =
   | WordsNumber, WordsNumber -> true
   | Punctuation, Punctuation -> true
   | Capitalize, Capitalize -> true
+  | Adaptive, Adaptive -> true
   | _, _ -> false
 
 let find_value configs cfg_type =

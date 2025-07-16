@@ -2,7 +2,7 @@ type t
 
 val to_list : t -> string list
 val of_list : string list -> t
-val create : file_name:string -> min:int -> max:int -> t
+val create : min:int -> max:int -> filename:string -> t
 val length : t -> int
 val get : t -> int -> string
 val punctuate : t -> chance:float -> t

@@ -22,13 +22,11 @@ type state =
   | Typing of typing
   | Summary of summary
 
-type lexicon = { words : Words.t (* memo : Lazy_table.t; *) }
-
 type t = {
   cols : int;
   rows : int;
   current_state : state;
-  lexicon : lexicon;
+  lexicon : Lexicon.t;
   configs : Configs.t;
 }
 
@@ -44,33 +42,46 @@ let capitalize_chance configs =
   | true -> 0.2
   | false -> 0.0
 
-let letters_n configs =
+let words_n configs =
   Configs.get_int_type configs WordsNumber |> Result.ok_or_failwith
   |> fun int_type ->
   match int_type with
   | Configs.Finite x -> Int.of_string x
   | Infinite -> 100
 
-let generate_new_letters words configs =
-  Words.random_n words ~n:(letters_n configs)
-  |> Words.punctuate ~chance:(punctuation_chance configs)
-  |> Words.capitalize ~chance:(capitalize_chance configs)
-  |> Letters.of_words ~status:Pending
-
-let create_typing { lexicon = { words; _ }; configs; _ } =
-  let letters =
-    generate_new_letters words configs |> Letters.set_current_n ~n:0
+let generate_new_letters lexicon ~configs ~mistakes =
+  let modify_new_words words =
+    words
+    |> Lexicon.punctuate ~chance:(punctuation_chance configs)
+    |> Lexicon.capitalize ~chance:(capitalize_chance configs)
+    |> Lexicon.to_letters
+    |> Letters.set_status ~status:Letters.Pending
   in
+  let new_words =
+    match Configs.(get_bool configs Adaptive) with
+    | Ok false -> Lexicon.random_n lexicon ~n:(words_n configs)
+    | Ok true ->
+        Lexicon.random_n_adaptive lexicon ~n:(words_n configs) ~mistakes
+    | Error msg -> failwith msg
+  in
+  new_words |> modify_new_words
+
+let create_typing { lexicon; configs; _ } =
   let mistakes = Mistakes.create () in
+  let letters =
+    generate_new_letters lexicon ~configs ~mistakes
+    |> Letters.set_current_n ~n:0
+  in
   Typing
     { letters; mistakes; start_time = None; inputs_count = 0; word_count = 0 }
 
 let create ~cols ~rows () =
-  let words = Words.create ~file_name:"data/words_alpha.txt" ~min:8 ~max:15 in
-  (* let memo = Lazy_table.create () in *)
+  let lexicon =
+    Lexicon.create ~min:8 ~max:15 ~filename:"data/words_alpha.txt" ()
+  in
   let current_state = Menu in
   let configs = Configs.create () in
-  { cols; rows; current_state; lexicon = { words (* ; memo *) }; configs }
+  { cols; rows; current_state; lexicon; configs }
 
 let to_summary ?et letters mistakes inputs_count =
   let execution_time = et |> Option.value ~default:0.0 in
@@ -99,11 +110,12 @@ let is_infinite configs =
   | Ok Infinite -> true
   | _ -> false
 
-let update_letters t letters input_char =
+let update_letters t letters input_char ~mistakes =
+  let configs = t.configs in
   let letters = Letters.update letters input_char in
   match (is_infinite t.configs, Letters.words_left letters < 50) with
   | true, true ->
-      let new_letters = generate_new_letters t.lexicon.words t.configs in
+      let new_letters = generate_new_letters t.lexicon ~configs ~mistakes in
       Letters.append letters new_letters
   | _, _ -> letters
 
@@ -114,7 +126,7 @@ let handle_input_char t input_char : t =
   | Typing
       ({ letters; mistakes; start_time; inputs_count; word_count; _ } as typing)
     -> (
-      let letters = update_letters t letters input_char in
+      let letters = update_letters t letters input_char ~mistakes in
       let word_count = update_word_count_after_input letters word_count in
       let mistakes = Mistakes.add_if_happened mistakes letters input_char in
       let inputs_count = inputs_count + 1 in

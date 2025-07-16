@@ -7,8 +7,8 @@ let acceptable_word min max = function
       let len = String.length word in
       min <= len && len <= max
 
-let file_content file_name =
-  let ic = Stdio.In_channel.create file_name in
+let file_content filename =
+  let ic = Stdio.In_channel.create filename in
   let content = In_channel.input_all ic in
   Stdio.In_channel.close ic;
   content
@@ -16,8 +16,8 @@ let file_content file_name =
 let to_list words = Array.to_list words
 let of_list lst = Array.of_list lst
 
-let create ~file_name ~min ~max =
-  file_content file_name
+let create ~min ~max ~filename =
+  file_content filename
   |> String.split_on_chars ~on:[ '\n' ]
   |> List.map ~f:String.strip
   |> List.filter ~f:(acceptable_word min max)
