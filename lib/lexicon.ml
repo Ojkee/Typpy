@@ -13,7 +13,8 @@ let create ~min ~max ~filename () =
 let random_n t ~n = { t with words = Words.random_n t.all_words ~n }
 
 let random_n_adaptive t ~n ~mistakes =
-  ignore (t, n, mistakes, t.ngrams_memo);
+  let mistakes_count = Mistakes.common_counter_n mistakes in
+  ignore (t, n, mistakes, t.ngrams_memo, mistakes_count);
   failwith "TODO"
 
 let capitalize t ~chance = { t with words = Words.capitalize t.words ~chance }

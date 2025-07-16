@@ -77,3 +77,26 @@ let add_if_happened t letters input =
     | _ :: tl -> aux tl
   in
   aux (Letters.to_list letters)
+
+let common_f_n t ~f ~n =
+  List.filter_map t ~f
+  |> List.sort ~compare:String.compare
+  |> List.group ~break:String.( <> )
+  |> List.map ~f:(fun x -> (List.hd_exn x, List.length x))
+  |> List.sort ~compare:(fun (_, c1) (_, c2) -> Int.compare c2 c1)
+  |> List.map ~f:(fun (p, _) -> p)
+  |> fun x -> List.take x n
+
+let common_prefix_n t ~n =
+  let f =
+   fun { inserted; prefix; _ } ->
+    Option.map prefix ~f:(fun p -> String.of_char_list [ p; inserted ])
+  in
+  common_f_n t ~f ~n
+
+let common_suffix_n t ~n =
+  let f =
+   fun { inserted; suffix; _ } ->
+    Option.map suffix ~f:(fun s -> String.of_char_list [ inserted; s ])
+  in
+  common_f_n t ~f ~n
