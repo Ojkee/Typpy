@@ -45,7 +45,7 @@ let random_n_adaptive t ~n ~mistakes =
     in
     let words =
       List.map most_common ~f:(Lazy_table.find_ngram_words t.memo t.all_words)
-      |> Words.concat
+      |> Words.concat |> Words.random_n ~n
     in
     { t with words }
 
