@@ -108,7 +108,7 @@ let render_typing ({ letters; _ } : Window.typing) ~num_words ~max_width =
     current_word_str ^ "/" ^ x |> fun x ->
     String.make (max_width - String.length x) ' ' ^ x |> Letters.of_string
   in
-  letters |> Letters.to_rows ~max_width |> crop_rows ~n_rows:5 |> fun x ->
+  letters |> Letters.to_rows ~max_width |> crop_rows ~n_rows:3 |> fun x ->
   x @ [ word_info ] |> letter_rows_to_img
 
 let render_summary_image summary =
@@ -123,7 +123,7 @@ let render_summary_image summary =
   List.map (time_info @ table @ info) ~f:of_string |> letter_rows_to_img
 
 let menu_width cols = 2 * cols / 5
-let typing_width cols = 4 * cols / 5
+let typing_width cols = 2 * cols / 5
 
 let backgound cols rows =
   I.char A.(bg (rgb_888 ~r:51 ~g:51 ~b:51)) ' ' cols rows

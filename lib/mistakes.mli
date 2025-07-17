@@ -25,5 +25,6 @@ val add : t -> mistake -> t
 val common_counter : t -> mistake_with_count list
 val common_counter_n : ?start:int -> ?n:int -> t -> mistake_with_count list
 val add_if_happened : t -> Letters.t -> char -> t
-val common_prefix_n : t -> n:int -> string list
-val common_suffix_n : t -> n:int -> string list
+val common_prefix_n : t -> n:int -> (string * int) list
+val common_suffix_n : t -> n:int -> (string * int) list
+val common_infix_n : t -> n:int -> (string * int) list

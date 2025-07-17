@@ -84,19 +84,41 @@ let common_f_n t ~f ~n =
   |> List.group ~break:String.( <> )
   |> List.map ~f:(fun x -> (List.hd_exn x, List.length x))
   |> List.sort ~compare:(fun (_, c1) (_, c2) -> Int.compare c2 c1)
-  |> List.map ~f:(fun (p, _) -> p)
   |> fun x -> List.take x n
+
+let is_whitespace = function
+  | ' '
+  | '\n'
+  | '\t'
+  | '\r' ->
+      true
+  | _ -> false
 
 let common_prefix_n t ~n =
   let f =
-   fun { inserted; prefix; _ } ->
-    Option.map prefix ~f:(fun p -> String.of_char_list [ p; inserted ])
+   fun { target; prefix; _ } ->
+    match is_whitespace target with
+    | true -> None
+    | false -> Option.map prefix ~f:(fun p -> String.of_char_list [ p; target ])
   in
   common_f_n t ~f ~n
 
 let common_suffix_n t ~n =
   let f =
-   fun { inserted; suffix; _ } ->
-    Option.map suffix ~f:(fun s -> String.of_char_list [ inserted; s ])
+   fun { target; suffix; _ } ->
+    match is_whitespace target with
+    | true -> None
+    | false -> Option.map suffix ~f:(fun s -> String.of_char_list [ target; s ])
+  in
+  common_f_n t ~f ~n
+
+let common_infix_n t ~n =
+  let f =
+   fun { target; prefix; suffix; _ } ->
+    match is_whitespace target with
+    | true -> None
+    | false ->
+        Option.map2 prefix suffix ~f:(fun p s ->
+            String.of_char_list [ p; target; s ] )
   in
   common_f_n t ~f ~n

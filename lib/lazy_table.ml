@@ -1,45 +1,5 @@
-type t = (string, string list) Hashtbl.t
+open Base
 
-let create () : t = Hashtbl.create 8
+type t = (string, Words.t) Hashtbl.t
 
-let contains (word : string) (ngram : string) : bool =
-  let re = Str.regexp_string ngram in
-  try
-    ignore (Str.search_forward re word 0);
-    true
-  with
-  | Not_found -> false
-
-let add_words_with_ngram (table : t) (words : Words.t) (ngram : string) : unit =
-  match Hashtbl.find_opt table ngram with
-  | None ->
-      let rec aux acc = function
-        | [] -> acc
-        | hd :: tl when contains hd ngram -> aux (hd :: acc) tl
-        | _ :: tl -> aux acc tl
-      in
-      Hashtbl.add table ngram (aux [] (Words.to_list words))
-  | Some _ -> ()
-
-let from_ngram (table : t) (ngram : string) : string list option =
-  Hashtbl.find_opt table ngram
-
-let take_random_n (n : int) (maxn : int) : int list =
-  Random.self_init ();
-  let rec aux acc = function
-    | 0 -> acc
-    | k -> aux (Random.int maxn :: acc) (k - 1)
-  in
-  aux [] n
-
-let rec random_n_from_ngram (table : t) (words : Words.t) (ngram : string)
-    (n : int) : string list =
-  match from_ngram table ngram with
-  | None ->
-      add_words_with_ngram table words ngram;
-      random_n_from_ngram table words ngram n
-  | Some lst when List.length lst <= n -> lst
-  | Some lst ->
-      let rand_n = take_random_n n (List.length lst) in
-      let find_idx i _ = List.mem i rand_n in
-      lst |> List.filteri find_idx
+let create () : t = Hashtbl.create (module String)

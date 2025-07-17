@@ -30,7 +30,7 @@ opam install dune base notty
 git clone https://github.com/Ojkee/Typpy.git
 cd Typpy
 dune build
-dune exec ./main.exe
+dune exec -- Typpy
 ```
 
 # Dataset
@@ -46,6 +46,7 @@ Dataset contains 370k unfiltered english words.
 - [x] Resize window 
 - [x] Infinity mode 
 - [ ] Adaptive word randomizer on infinity mode
+- [ ] Cache words that were lazy loaded from mistakes
 - [ ] Save progression
 - [ ] Per-character timing for advanced stats
 - [ ] Implement arrow keys

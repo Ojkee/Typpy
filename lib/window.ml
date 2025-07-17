@@ -47,7 +47,7 @@ let words_n configs =
   |> fun int_type ->
   match int_type with
   | Configs.Finite x -> Int.of_string x
-  | Infinite -> 100
+  | Infinite -> 25
 
 let generate_new_letters lexicon ~configs ~mistakes =
   let modify_new_words words =
@@ -113,10 +113,11 @@ let is_infinite configs =
 let update_letters t letters input_char ~mistakes =
   let configs = t.configs in
   let letters = Letters.update letters input_char in
-  match (is_infinite t.configs, Letters.words_left letters < 50) with
+  match (is_infinite t.configs, Letters.words_left letters < 20) with
   | true, true ->
-      let new_letters = generate_new_letters t.lexicon ~configs ~mistakes in
-      Letters.append letters new_letters
+      generate_new_letters t.lexicon ~configs ~mistakes
+      |> Letters.append (Letters.of_string " ")
+      |> Letters.append letters
   | _, _ -> letters
 
 let handle_input_char t input_char : t =
