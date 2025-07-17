@@ -8,3 +8,5 @@ val get : t -> int -> string
 val punctuate : t -> chance:float -> t
 val capitalize : t -> chance:float -> t
 val random_n : t -> n:int -> t
+val subset_of_substr : t -> substring:string -> t
+val concat : t list -> t

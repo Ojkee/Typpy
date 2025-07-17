@@ -3,19 +3,18 @@ open Base
 type t = {
   words : Words.t;
   all_words : Words.t;
-  ngrams_memo : Lazy_table.t;
+  memo : Lazy_table.t;
 }
 
 let create ~min ~max ~filename () =
   let words = Words.of_list []
   and all_words = Words.create ~min ~max ~filename
-  and ngrams_memo = Lazy_table.create () in
-  { words; all_words; ngrams_memo }
+  and memo = Lazy_table.create () in
+  { words; all_words; memo }
 
 let random_n t ~n = { t with words = Words.random_n t.all_words ~n }
 
 let random_n_adaptive t ~n ~mistakes =
-  ignore t.ngrams_memo;
   if Mistakes.length mistakes = 0 then random_n t ~n
   else
     let pre = Mistakes.common_prefix_n mistakes ~n:10 in
@@ -41,11 +40,14 @@ let random_n_adaptive t ~n ~mistakes =
     let most_common =
       List.map bigrams ~f:(fun b -> (b, score b))
       |> List.sort ~compare:(fun (_, s1) (_, s2) -> Int.compare s2 s1)
-      |> List.map ~f:(fun (s, _) -> s)
+      |> List.map ~f:fst
       |> fun common -> List.take common 3
     in
-    ignore most_common;
-    failwith "TODO"
+    let words =
+      List.map most_common ~f:(Lazy_table.find_ngram_words t.memo t.all_words)
+      |> Words.concat
+    in
+    { t with words }
 
 let capitalize t ~chance = { t with words = Words.capitalize t.words ~chance }
 let punctuate t ~chance = { t with words = Words.punctuate t.words ~chance }

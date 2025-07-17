@@ -104,3 +104,8 @@ let random_n (t : t) ~n =
     | hd :: tl -> aux (get t hd :: acc) tl
   in
   aux [] rand_n |> of_list
+
+let subset_of_substr t ~substring =
+  Array.filter t ~f:(fun word -> String.is_substring word ~substring)
+
+let concat t_list = Array.concat t_list
