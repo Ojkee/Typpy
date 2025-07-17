@@ -17,9 +17,9 @@ let random_n t ~n = { t with words = Words.random_n t.all_words ~n }
 let random_n_adaptive t ~n ~mistakes =
   if Mistakes.length mistakes = 0 then random_n t ~n
   else
-    let pre = Mistakes.common_prefix_n mistakes ~n:10 in
-    let inf = Mistakes.common_infix_n mistakes ~n:10 in
-    let suf = Mistakes.common_suffix_n mistakes ~n:10 in
+    let pre = Mistakes.common_prefix_n mistakes ~n:3 in
+    let inf = Mistakes.common_infix_n mistakes ~n:3 in
+    let suf = Mistakes.common_suffix_n mistakes ~n:3 in
     let fst (p, _) = p in
     let fsts lst = List.map lst ~f:fst in
     let bigrams =

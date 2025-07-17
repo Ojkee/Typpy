@@ -45,8 +45,8 @@ Dataset contains 370k unfiltered english words.
 - [x] Word counter
 - [x] Resize window 
 - [x] Infinity mode 
-- [ ] Adaptive word randomizer on infinity mode
-- [ ] Cache words that were lazy loaded from mistakes
+- [x] Adaptive word randomizer on infinity mode
+- [x] Cache words that were lazy loaded from mistakes
 - [ ] Save progression
 - [ ] Per-character timing for advanced stats
 - [ ] Implement arrow keys
@@ -57,3 +57,4 @@ Dataset contains 370k unfiltered english words.
 - [x] Summary wraps incorectly at the end of big table
 - [x] Infinity mode breaks after certain number of words
 - [x] Infinity mode with other configs doesn't work
+- [ ] Adaptive mode works extremaly slow
